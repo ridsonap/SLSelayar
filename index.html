@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>SLS Finder - Kab. Kepulauan Selayar</title>
   <meta name="description" content="Aplikasi WebGIS untuk deteksi lokasi SLS (Satuan Lingkungan Setempat), Desa, dan Kecamatan di Kabupaten Kepulauan Selayar.">
   <meta name="theme-color" content="#0284c7">
@@ -94,14 +94,14 @@
     <div id="map"></div>
 
     <!-- FLOATING MAP CONTROLS (TOP RIGHT) -->
-    <div class="absolute top-20 sm:top-20 right-3 z-20 flex flex-col gap-2.5">
-      <!-- Tombol Home -->
+    <div class="absolute top-[66px] sm:top-20 right-3 z-20 flex flex-col gap-2.5 items-end pointer-events-auto">
+      <!-- Tombol Deteksi Lokasi Sekarang (GPS) -->
       <button 
-        id="btnHome" 
-        class="w-11 h-11 bg-white/95 backdrop-blur-md text-slate-700 hover:text-primary hover:bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center transition active:scale-95 group"
-        title="Kembali ke Tampilan Awal (Kepulauan Selayar)"
+        id="btnGps" 
+        class="w-11 h-11 bg-primary hover:bg-primary-dark text-white rounded-2xl shadow-lg border border-primary-dark/20 flex items-center justify-center transition active:scale-95 group"
+        title="Deteksi Lokasi Saya Sekarang (GPS)"
       >
-        <i data-lucide="home" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
+        <i data-lucide="crosshair" id="gpsIcon" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
       </button>
 
       <!-- Tombol Basemap -->
@@ -115,15 +115,14 @@
     </div>
 
     <!-- FLOATING MAP CONTROLS (BOTTOM RIGHT) -->
-    <div class="absolute bottom-6 right-3 sm:right-6 z-20 flex flex-col gap-2.5 items-end">
-      <!-- Tombol Deteksi Lokasi Sekarang (GPS) -->
+    <div class="absolute bottom-6 right-3 sm:right-6 z-20 flex flex-col gap-2.5 items-end pointer-events-auto">
+      <!-- Tombol Home (Reset Selayar) -->
       <button 
-        id="btnGps" 
-        class="h-12 px-4 bg-primary hover:bg-primary-dark text-white font-semibold rounded-2xl shadow-xl flex items-center gap-2 transition-all transform active:scale-95"
-        title="Deteksi Lokasi Saya Sekarang (GPS)"
+        id="btnHome" 
+        class="w-11 h-11 bg-white/95 backdrop-blur-md text-slate-700 hover:text-primary hover:bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center transition active:scale-95 group"
+        title="Kembali ke Tampilan Awal (Kepulauan Selayar)"
       >
-        <i data-lucide="crosshair" id="gpsIcon" class="w-5 h-5"></i>
-        <span class="text-sm font-medium pr-1">Lokasi Saya</span>
+        <i data-lucide="home" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
       </button>
     </div>
 
@@ -229,24 +228,56 @@
       </div>
 
       <div class="grid grid-cols-1 gap-2.5 mt-4" id="basemapOptions">
-        <!-- Option OSM -->
-        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="osm">
-          <input type="radio" name="basemapChoice" value="osm" checked class="text-primary focus:ring-primary w-4 h-4 ml-1">
+        <!-- Option Google Maps Satellite (Default) -->
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="google-satellite">
+          <input type="radio" name="basemapChoice" value="google-satellite" checked class="text-primary focus:ring-primary w-4 h-4 ml-1">
           <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
             <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <rect width="54" height="54" fill="#f4f3f0"/>
-              <path d="M0 0 L24 0 L18 54 L0 54 Z" fill="#d1e6d3"/>
-              <path d="M38 0 L54 0 L54 36 L44 54 Z" fill="#b9dcfa"/>
-              <path d="M0 24 Q 28 20, 54 28" stroke="#ffffff" stroke-width="6" fill="none"/>
-              <path d="M0 24 Q 28 20, 54 28" stroke="#fcd34d" stroke-width="3" fill="none"/>
-              <path d="M22 0 L26 54" stroke="#ffffff" stroke-width="4" fill="none"/>
-              <path d="M22 0 L26 54" stroke="#fdba74" stroke-width="2" fill="none"/>
-              <circle cx="28" cy="22" r="3.5" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
+              <defs>
+                <radialGradient id="googlesat" cx="40%" cy="40%" r="60%">
+                  <stop offset="0%" stop-color="#2d5022"/>
+                  <stop offset="50%" stop-color="#1b3816"/>
+                  <stop offset="100%" stop-color="#0d210e"/>
+                </radialGradient>
+              </defs>
+              <rect width="54" height="54" fill="#0b233a"/>
+              <path d="M0 36 Q 16 20, 34 28 T 54 18 L 54 54 L 0 54 Z" fill="#133d59"/>
+              <path d="M0 0 L 42 0 Q 36 24, 22 32 T 0 36 Z" fill="url(#googlesat)"/>
+              <path d="M6 6 Q 16 10, 12 20 T 4 26 Z" fill="#3b632c" opacity="0.85"/>
+              <path d="M20 3 Q 28 8, 24 16 Z" fill="#22421a" opacity="0.9"/>
             </svg>
           </div>
           <div class="ml-3 min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-slate-800">OpenStreetMap</span>
-            <span class="block text-xs text-slate-500 truncate">Peta jalan & toponimi standar</span>
+            <span class="block text-sm font-semibold text-slate-800">Google Maps Satelit</span>
+            <span class="block text-xs text-slate-500 truncate">Foto satelit jernih resolusi tinggi</span>
+          </div>
+        </label>
+
+        <!-- Option Google Maps Hybrid -->
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="hybrid">
+          <input type="radio" name="basemapChoice" value="hybrid" class="text-primary focus:ring-primary w-4 h-4 ml-1">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+            <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="hybgrad" cx="40%" cy="40%" r="60%">
+                  <stop offset="0%" stop-color="#335028"/>
+                  <stop offset="60%" stop-color="#1e3318"/>
+                  <stop offset="100%" stop-color="#0f1c0d"/>
+                </radialGradient>
+              </defs>
+              <rect width="54" height="54" fill="#0f2742"/>
+              <path d="M0 0 L 42 0 Q 36 26, 22 34 T 0 40 Z" fill="url(#hybgrad)"/>
+              <path d="M0 18 Q 24 16, 54 24" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+              <path d="M22 0 L 25 54" stroke="#ffffff" stroke-width="2" fill="none"/>
+              <path d="M22 0 L 25 54" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
+              <circle cx="34" cy="20" r="2.5" fill="#ef4444" stroke="#ffffff" stroke-width="1"/>
+              <rect x="2" y="38" width="24" height="8" rx="2" fill="#000" fill-opacity="0.6"/>
+              <rect x="4" y="41" width="20" height="3" rx="1" fill="#fff" fill-opacity="0.9"/>
+            </svg>
+          </div>
+          <div class="ml-3 min-w-0 flex-1">
+            <span class="block text-sm font-semibold text-slate-800">Google Maps Hybrid</span>
+            <span class="block text-xs text-slate-500 truncate">Citra satelit dengan nama jalan</span>
           </div>
         </label>
 
@@ -276,31 +307,24 @@
           </div>
         </label>
 
-        <!-- Option Google Maps Hybrid -->
-        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="hybrid">
-          <input type="radio" name="basemapChoice" value="hybrid" class="text-primary focus:ring-primary w-4 h-4 ml-1">
+        <!-- Option OSM -->
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="osm">
+          <input type="radio" name="basemapChoice" value="osm" class="text-primary focus:ring-primary w-4 h-4 ml-1">
           <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
             <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <radialGradient id="hybgrad" cx="40%" cy="40%" r="60%">
-                  <stop offset="0%" stop-color="#335028"/>
-                  <stop offset="60%" stop-color="#1e3318"/>
-                  <stop offset="100%" stop-color="#0f1c0d"/>
-                </radialGradient>
-              </defs>
-              <rect width="54" height="54" fill="#0f2742"/>
-              <path d="M0 0 L 42 0 Q 36 26, 22 34 T 0 40 Z" fill="url(#hybgrad)"/>
-              <path d="M0 18 Q 24 16, 54 24" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
-              <path d="M22 0 L 25 54" stroke="#ffffff" stroke-width="2" fill="none"/>
-              <path d="M22 0 L 25 54" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
-              <circle cx="34" cy="20" r="2.5" fill="#ef4444" stroke="#ffffff" stroke-width="1"/>
-              <rect x="2" y="38" width="24" height="8" rx="2" fill="#000" fill-opacity="0.6"/>
-              <rect x="4" y="41" width="20" height="3" rx="1" fill="#fff" fill-opacity="0.9"/>
+              <rect width="54" height="54" fill="#f4f3f0"/>
+              <path d="M0 0 L24 0 L18 54 L0 54 Z" fill="#d1e6d3"/>
+              <path d="M38 0 L54 0 L54 36 L44 54 Z" fill="#b9dcfa"/>
+              <path d="M0 24 Q 28 20, 54 28" stroke="#ffffff" stroke-width="6" fill="none"/>
+              <path d="M0 24 Q 28 20, 54 28" stroke="#fcd34d" stroke-width="3" fill="none"/>
+              <path d="M22 0 L26 54" stroke="#ffffff" stroke-width="4" fill="none"/>
+              <path d="M22 0 L26 54" stroke="#fdba74" stroke-width="2" fill="none"/>
+              <circle cx="28" cy="22" r="3.5" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
             </svg>
           </div>
           <div class="ml-3 min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-slate-800">Google Maps Hybrid</span>
-            <span class="block text-xs text-slate-500 truncate">Citra satelit dengan nama jalan</span>
+            <span class="block text-sm font-semibold text-slate-800">OpenStreetMap</span>
+            <span class="block text-xs text-slate-500 truncate">Peta jalan & toponimi standar</span>
           </div>
         </label>
       </div>

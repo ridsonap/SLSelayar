@@ -8,6 +8,8 @@
 
 body, html {
   height: 100%;
+  height: -webkit-fill-available;
+  height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -20,7 +22,38 @@ body, html {
   height: 100%;
   width: 100%;
   z-index: 10;
-  background-color: #f1f5f9;
+  background-color: #0b1e33; /* Dark ocean tone prevents white flicker on tile load */
+}
+
+/* Fix Leaflet tile rendering & distortion on iOS Safari & Android WebKit */
+.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.leaflet-container img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Map controls z-index harmonization with modals & drawer */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20 !important;
+}
+
+/* Position Leaflet Zoom Controls below Top Search Bar */
+.leaflet-top.leaflet-left {
+  top: 66px !important;
+  left: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .leaflet-top.leaflet-left {
+    top: 76px !important;
+    left: 16px !important;
+  }
 }
 
 /* Custom map pulse marker for GPS */
@@ -113,23 +146,37 @@ body, html {
 /* Leaflet Customization */
 .leaflet-control-zoom {
   border: none !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
-  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 16px !important;
   overflow: hidden;
+  margin: 0 !important;
 }
 
 .leaflet-control-zoom a {
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #334155 !important;
   border: none !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  width: 36px !important;
-  height: 36px !important;
-  line-height: 36px !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
 }
 
-.leaflet-control-zoom a:hover {
-  background-color: #f8fafc !important;
+.leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-control-zoom a:hover,
+.leaflet-control-zoom a:active {
+  background-color: #ffffff !important;
   color: #0284c7 !important;
 }
 
@@ -158,70 +205,9 @@ body, html {
 
 /* Leaflet DivIcon Clean Reset */
 .leaflet-div-icon.gps-pulse-icon,
-.leaflet-div-icon.custom-pin,
-.leaflet-div-icon.selected-sls-divicon {
+.leaflet-div-icon.custom-pin {
   background: transparent !important;
   border: none !important;
-}
-
-/* Selected SLS Floating On-Map Badge */
-.selected-sls-map-card {
-  min-width: 170px;
-  max-width: 260px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  pointer-events: none;
-  font-family: inherit;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition: all 0.2s ease;
-  white-space: normal;
-}
-
-.selected-sls-map-card.osm-card {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1.5px solid #0284c7;
-  color: #0f172a;
-}
-.selected-sls-map-card.osm-card .osm-title {
-  font-weight: 700;
-  font-size: 11px;
-  line-height: 1.25;
-  color: #0284c7;
-}
-.selected-sls-map-card.osm-card .osm-code {
-  color: #0369a1;
-  font-weight: 800;
-  margin-right: 3px;
-}
-.selected-sls-map-card.osm-card .osm-sub {
-  font-size: 10px;
-  color: #64748b;
-  margin-top: 2px;
-  line-height: 1.2;
-}
-
-.selected-sls-map-card.sat-card {
-  background: rgba(15, 23, 42, 0.94);
-  border: 1.5px solid #facc15;
-  color: #ffffff;
-  box-shadow: 0 0 16px rgba(250, 204, 21, 0.4), 0 4px 16px rgba(0, 0, 0, 0.6);
-}
-.selected-sls-map-card.sat-card .sat-title {
-  font-weight: 700;
-  font-size: 11px;
-  line-height: 1.25;
-  color: #ffffff;
-}
-.selected-sls-map-card.sat-card .sat-code {
-  color: #facc15;
-  font-weight: 800;
-  margin-right: 3px;
-}
-.selected-sls-map-card.sat-card .sat-sub {
-  font-size: 10px;
-  color: #e2e8f0;
-  margin-top: 2px;
-  line-height: 1.2;
 }
 
 /* Satellite Tooltip High Contrast */
@@ -232,7 +218,35 @@ body, html {
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
 }
 
-/* Basemap Satellite Mode Adaptations for Bottom Sheet & Info */
+/* Basemap Satellite Mode Adaptations */
+body.basemap-satellite .leaflet-control-zoom {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+body.basemap-satellite .leaflet-control-zoom a {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  color: #f8fafc !important;
+  border-bottom-color: rgba(51, 65, 85, 0.8) !important;
+}
+body.basemap-satellite .leaflet-control-zoom a:hover,
+body.basemap-satellite .leaflet-control-zoom a:active {
+  background-color: rgba(30, 41, 59, 0.98) !important;
+  color: #38bdf8 !important;
+}
+
+body.basemap-satellite #btnBasemap,
+body.basemap-satellite #btnHome {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  color: #f8fafc !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+body.basemap-satellite #btnBasemap:hover,
+body.basemap-satellite #btnHome:hover {
+  background-color: rgba(30, 41, 59, 0.98) !important;
+  color: #38bdf8 !important;
+}
+
 body.basemap-satellite #bottomSheet > div {
   background-color: rgba(15, 23, 42, 0.95) !important;
   border-color: rgba(56, 189, 248, 0.3) !important;

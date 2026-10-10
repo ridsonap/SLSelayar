@@ -12,10 +12,9 @@ const state = {
   gpsMarker: null,
   gpsCircle: null,
   clickMarker: null,
-  selectedLabelMarker: null,
   selectedFeature: null,
   selectedCenterLatLng: null,
-  activeBasemap: 'osm',
+  activeBasemap: 'google-satellite',
   basemapLayers: {},
   featuresWithBbox: [],
   kecamatanList: [],
@@ -91,37 +90,54 @@ function initMap() {
     preferCanvas: true // High performance rendering for 700+ multipolygons
   });
 
-  // Reposition zoom control to bottom-left on desktop/mobile
-  state.map.zoomControl.setPosition('bottomleft');
+  // Reposition zoom control to top-left on mobile and desktop
+  state.map.zoomControl.setPosition('topleft');
 
-  // Define Tile Layers
+  // Define Tile Layers with multi-subdomain support for high concurrency on iOS Safari
   state.basemapLayers = {
-    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    'google-satellite': L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps Satelit'
+    }),
+    hybrid: L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps Hybrid'
     }),
     satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       attribution: 'Tiles &copy; Esri &mdash; World Imagery'
     }),
-    hybrid: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      maxZoom: 20,
-      attribution: '&copy; Google Maps'
+    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     })
   };
 
-  // Add default basemap
-  state.basemapLayers.osm.addTo(state.map);
+  // Add default basemap: Google Maps Satelit
+  state.basemapLayers['google-satellite'].addTo(state.map);
+  document.body.classList.add('basemap-satellite');
 
   // Setup click-on-map reverse lookup
   state.map.on('click', onMapClick);
+
+  // Resize handler for iPhone Safari dynamic viewport
+  window.addEventListener('resize', () => {
+    if (state.map) state.map.invalidateSize();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      if (state.map) state.map.invalidateSize();
+    }, 200);
+  });
 }
 
 /**
  * 2. Basemap Switcher Logic
  */
 function isSatelliteBasemap() {
-  return state.activeBasemap === 'satellite' || state.activeBasemap === 'hybrid';
+  return state.activeBasemap === 'google-satellite' || state.activeBasemap === 'satellite' || state.activeBasemap === 'hybrid';
 }
 
 function setBasemap(type) {
@@ -159,19 +175,15 @@ function setBasemap(type) {
     state.highlightLayer.bringToFront();
   }
 
-  // Update on-map card label if feature is currently selected
-  if (state.selectedFeature && state.selectedCenterLatLng) {
-    updateSelectedOnMapLabel(state.selectedFeature, state.selectedCenterLatLng);
-  }
-
   showToast(`Peta dasar diubah ke: ${getBasemapLabel(type)}`, 'info');
 }
 
 function getBasemapLabel(type) {
   switch (type) {
-    case 'osm': return 'OpenStreetMap (Standar)';
-    case 'satellite': return 'Citra Satelit Esri';
+    case 'google-satellite': return 'Google Maps Satelit';
     case 'hybrid': return 'Google Maps Hybrid';
+    case 'satellite': return 'Citra Satelit Esri';
+    case 'osm': return 'OpenStreetMap (Standar)';
     default: return type;
   }
 }
@@ -259,6 +271,7 @@ async function loadGeoJsonData() {
     DOM.loadingOverlay.classList.add('opacity-0');
     setTimeout(() => {
       DOM.loadingOverlay.classList.add('hidden');
+      if (state.map) state.map.invalidateSize();
     }, 300);
 
     showToast('Batas SLS Kepulauan Selayar siap digunakan!', 'success');
@@ -476,48 +489,8 @@ function selectFeature(feature, clickLatLng = null, gpsAccuracy = null) {
   // Store data for share
   DOM.btnShareInfo.dataset.shareText = `📍 Informasi SLS Kepulauan Selayar:\n• SLS: ${slsCode}${p.nmsls || '-'}\n• Wilayah: ${desaCode}Desa ${p.nmdesa || '-'}, ${kecCode}Kec ${p.nmkec || '-'}\n• ID SLS: ${p.idsls}\n• Titik: ${displayLat}, ${displayLng}\n• Maps: https://www.google.com/maps?q=${displayLat},${displayLng}`;
 
-  // Update on-map card label
-  updateSelectedOnMapLabel(feature, centerLatLng);
-
-  // Open Drawer
+  // Open Drawer only (no redundant on-map floating badge)
   openDrawer();
-}
-
-function updateSelectedOnMapLabel(feature, latlng) {
-  if (state.selectedLabelMarker) {
-    state.map.removeLayer(state.selectedLabelMarker);
-    state.selectedLabelMarker = null;
-  }
-
-  const p = feature.properties;
-  const isSat = isSatelliteBasemap();
-
-  const slsCode = p.kdsls ? `[${p.kdsls}] ` : '';
-  const desaCode = p.kddesa ? `[${p.kddesa}] ` : '';
-  const kecCode = p.kdkec ? `[${p.kdkec}] ` : '';
-  const wilayahSub = `${desaCode}Desa ${p.nmdesa || '-'}, ${kecCode}Kec ${p.nmkec || '-'}`;
-
-  const html = isSat
-    ? `<div class="selected-sls-map-card sat-card">
-         <div class="sat-title"><span class="sat-code">${slsCode}</span>${p.nmsls || 'SLS'}</div>
-         <div class="sat-sub">${wilayahSub}</div>
-       </div>`
-    : `<div class="selected-sls-map-card osm-card">
-         <div class="osm-title"><span class="osm-code">${slsCode}</span>${p.nmsls || 'SLS'}</div>
-         <div class="osm-sub">${wilayahSub}</div>
-       </div>`;
-
-  const labelIcon = L.divIcon({
-    className: 'selected-sls-divicon',
-    html: html,
-    iconAnchor: [90, 42]
-  });
-
-  state.selectedLabelMarker = L.marker(latlng, {
-    icon: labelIcon,
-    interactive: false,
-    zIndexOffset: 1000
-  }).addTo(state.map);
 }
 
 /**
@@ -531,10 +504,6 @@ function highlightMultipleFeatures(features, label) {
   if (state.clickMarker) {
     state.map.removeLayer(state.clickMarker);
     state.clickMarker = null;
-  }
-  if (state.selectedLabelMarker) {
-    state.map.removeLayer(state.selectedLabelMarker);
-    state.selectedLabelMarker = null;
   }
   state.selectedFeature = null;
   state.selectedCenterLatLng = null;
@@ -588,7 +557,7 @@ function onMapClick(e) {
     setClickMarker(lat, lng);
     selectFeature(feature, e.latlng);
   } else {
-    // When clicking outside Kepulauan Selayar: do NOT show marker
+    // When clicking outside Kepulauan Selayar: do NOT show marker and NO toast warning
     if (state.clickMarker) {
       state.map.removeLayer(state.clickMarker);
       state.clickMarker = null;
@@ -597,14 +566,9 @@ function onMapClick(e) {
       state.map.removeLayer(state.highlightLayer);
       state.highlightLayer = null;
     }
-    if (state.selectedLabelMarker) {
-      state.map.removeLayer(state.selectedLabelMarker);
-      state.selectedLabelMarker = null;
-    }
     state.selectedFeature = null;
     state.selectedCenterLatLng = null;
     closeDrawer();
-    showToast(`Titik (${lat.toFixed(5)}, ${lng.toFixed(5)}) berada di luar SLS Kepulauan Selayar`, 'warning');
   }
 }
 
@@ -668,10 +632,6 @@ function handleGeolocation() {
       if (state.highlightLayer) {
         state.map.removeLayer(state.highlightLayer);
         state.highlightLayer = null;
-      }
-      if (state.selectedLabelMarker) {
-        state.map.removeLayer(state.selectedLabelMarker);
-        state.selectedLabelMarker = null;
       }
       state.selectedFeature = null;
       state.selectedCenterLatLng = null;
@@ -765,10 +725,6 @@ function handleHomeButton() {
   if (state.highlightLayer) {
     state.map.removeLayer(state.highlightLayer);
     state.highlightLayer = null;
-  }
-  if (state.selectedLabelMarker) {
-    state.map.removeLayer(state.selectedLabelMarker);
-    state.selectedLabelMarker = null;
   }
   state.selectedFeature = null;
   state.selectedCenterLatLng = null;
@@ -1038,10 +994,6 @@ function processCoordinateInput() {
     if (state.highlightLayer) {
       state.map.removeLayer(state.highlightLayer);
       state.highlightLayer = null;
-    }
-    if (state.selectedLabelMarker) {
-      state.map.removeLayer(state.selectedLabelMarker);
-      state.selectedLabelMarker = null;
     }
     state.selectedFeature = null;
     state.selectedCenterLatLng = null;

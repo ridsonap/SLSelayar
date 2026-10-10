@@ -1,5 +1,5 @@
 // Service Worker for SLS Finder Kepulauan Selayar
-const CACHE_NAME = 'sls-selayar-v2';
+const CACHE_NAME = 'sls-selayar-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -38,6 +38,20 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
 
+  const url = new URL(event.request.url);
+
+  // CRITICAL FOR IPHONE / SAFARI:
+  // Never intercept map tile servers (google, osm, esri).
+  // Let the browser natively handle tile streaming and HTTP caching directly!
+  if (
+    url.hostname.includes('google.com') ||
+    url.hostname.includes('openstreetmap.org') ||
+    url.hostname.includes('arcgisonline.com')
+  ) {
+    return;
+  }
+
+  // Only handle same-origin or explicit CDN libraries
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -59,7 +73,6 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // If network fails and cached version exists
         return cachedResponse;
       });
     })
