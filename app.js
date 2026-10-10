@@ -14,6 +14,7 @@ const state = {
   clickMarker: null,
   selectedFeature: null,
   selectedCenterLatLng: null,
+  isDrawerMinimized: false,
   activeBasemap: 'google-satellite',
   basemapLayers: {},
   featuresWithBbox: [],
@@ -42,6 +43,12 @@ const DOM = {
   bottomSheet: document.getElementById('bottomSheet'),
   btnCloseDrawer: document.getElementById('btnCloseDrawer'),
   drawerHandle: document.getElementById('drawerHandle'),
+  drawerHeader: document.getElementById('drawerHeader'),
+  btnToggleDrawer: document.getElementById('btnToggleDrawer'),
+  drawerToggleIcon: document.getElementById('drawerToggleIcon'),
+  drawerBody: document.getElementById('drawerBody'),
+  btnReopenDrawer: document.getElementById('btnReopenDrawer'),
+  reopenSlsName: document.getElementById('reopenSlsName'),
   slsName: document.getElementById('slsName'),
   slsDesaKec: document.getElementById('slsDesaKec'),
   slsId: document.getElementById('slsId'),
@@ -530,18 +537,70 @@ function highlightMultipleFeatures(features, label) {
   }).addTo(state.map);
 
   state.map.fitBounds(state.highlightLayer.getBounds(), { padding: [30, 30], animate: true });
-  closeDrawer();
+  closeDrawer(true);
   showToast(`Menampilkan & highlight ${label} (${features.length} SLS)`, 'info');
 }
 
-function openDrawer() {
+function openDrawer(minimized = false) {
+  hideReopenPill();
   DOM.bottomSheet.classList.remove('hidden-drawer');
   DOM.bottomSheet.classList.add('show-drawer');
+  if (minimized) {
+    minimizeDrawer();
+  } else {
+    expandDrawer();
+  }
 }
 
-function closeDrawer() {
+function closeDrawer(clearPill = false) {
   DOM.bottomSheet.classList.remove('show-drawer');
   DOM.bottomSheet.classList.add('hidden-drawer');
+  if (clearPill || !state.selectedFeature) {
+    hideReopenPill();
+  } else {
+    showReopenPill();
+  }
+}
+
+function minimizeDrawer() {
+  state.isDrawerMinimized = true;
+  DOM.bottomSheet.classList.add('is-minimized');
+  if (DOM.drawerToggleIcon) {
+    DOM.drawerToggleIcon.setAttribute('data-lucide', 'chevron-up');
+    lucide.createIcons();
+  }
+}
+
+function expandDrawer() {
+  state.isDrawerMinimized = false;
+  DOM.bottomSheet.classList.remove('is-minimized');
+  if (DOM.drawerToggleIcon) {
+    DOM.drawerToggleIcon.setAttribute('data-lucide', 'chevron-down');
+    lucide.createIcons();
+  }
+}
+
+function toggleDrawerMinimize() {
+  if (state.isDrawerMinimized) {
+    expandDrawer();
+  } else {
+    minimizeDrawer();
+  }
+}
+
+function showReopenPill() {
+  if (!state.selectedFeature || !DOM.btnReopenDrawer) return;
+  const p = state.selectedFeature.properties;
+  const code = p.kdsls ? `[${p.kdsls}] ` : '';
+  DOM.reopenSlsName.textContent = `${code}${p.nmsls || 'Detail SLS'}`;
+  DOM.btnReopenDrawer.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function hideReopenPill() {
+  if (DOM.btnReopenDrawer) {
+    DOM.btnReopenDrawer.classList.add('hidden');
+  }
 }
 
 /**
@@ -568,7 +627,7 @@ function onMapClick(e) {
     }
     state.selectedFeature = null;
     state.selectedCenterLatLng = null;
-    closeDrawer();
+    closeDrawer(true);
   }
 }
 
@@ -635,7 +694,7 @@ function handleGeolocation() {
       }
       state.selectedFeature = null;
       state.selectedCenterLatLng = null;
-      closeDrawer();
+      closeDrawer(true);
       showToast(`Lokasi GPS terdeteksi (${lat.toFixed(5)}, ${lng.toFixed(5)}) berada di luar batas wilayah SLS Selayar.`, 'warning');
     }
   };
@@ -728,7 +787,7 @@ function handleHomeButton() {
   }
   state.selectedFeature = null;
   state.selectedCenterLatLng = null;
-  closeDrawer();
+  closeDrawer(true);
 
   showToast('Tampilan peta dikembalikan ke Kabupaten Kepulauan Selayar', 'info');
 }
@@ -997,7 +1056,7 @@ function processCoordinateInput() {
     }
     state.selectedFeature = null;
     state.selectedCenterLatLng = null;
-    closeDrawer();
+    closeDrawer(true);
     showToast(`Koordinat (${lat.toFixed(5)}, ${lng.toFixed(5)}) di luar SLS Kepulauan Selayar.`, 'warning');
   }
 }
@@ -1168,10 +1227,47 @@ function initClipboardActions() {
     }
   });
 
-  DOM.btnCloseDrawer.addEventListener('click', closeDrawer);
-  DOM.drawerHandle.addEventListener('click', () => {
-    DOM.bottomSheet.classList.toggle('hidden-drawer');
-  });
+  // Drawer Interactive Controls (Minimalist Hide/Show & Reopen)
+  DOM.btnCloseDrawer.addEventListener('click', () => closeDrawer(false));
+  
+  if (DOM.btnToggleDrawer) {
+    DOM.btnToggleDrawer.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDrawerMinimize();
+    });
+  }
+
+  if (DOM.drawerHandle) {
+    DOM.drawerHandle.addEventListener('click', toggleDrawerMinimize);
+  }
+
+  if (DOM.drawerHeader) {
+    DOM.drawerHeader.addEventListener('click', (e) => {
+      if (state.isDrawerMinimized && !e.target.closest('button')) {
+        expandDrawer();
+      }
+    });
+  }
+
+  if (DOM.btnReopenDrawer) {
+    DOM.btnReopenDrawer.addEventListener('click', () => openDrawer(false));
+  }
+
+  // Smooth mobile touch swipe gesture
+  let touchStartY = 0;
+  DOM.bottomSheet.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  DOM.bottomSheet.addEventListener('touchend', (e) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchEndY - touchStartY;
+    if (diff > 45 && !state.isDrawerMinimized) {
+      minimizeDrawer(); // Swiped down -> collapse into sleek minimal bar
+    } else if (diff < -35 && state.isDrawerMinimized) {
+      expandDrawer(); // Swiped up -> expand full card
+    }
+  }, { passive: true });
 }
 
 /**
