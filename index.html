@@ -40,29 +40,29 @@
   <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased select-none flex flex-col h-screen w-screen overflow-hidden">
+<body class="bg-slate-950 text-slate-100 antialiased select-none flex flex-col h-screen w-screen overflow-hidden dark">
 
   <!-- TOP HEADER / SEARCH BAR -->
   <header class="absolute top-0 left-0 right-0 z-30 p-2 sm:p-3 pointer-events-none">
     <div class="max-w-2xl mx-auto flex items-center gap-2">
       <!-- Search Input Wrapper -->
-      <div class="relative flex-1 pointer-events-auto shadow-lg rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/80 transition-all focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary">
+      <div class="relative flex-1 pointer-events-auto shadow-2xl rounded-2xl bg-slate-900/95 backdrop-blur-md border border-slate-700/80 transition-all focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary">
         <div class="flex items-center px-3.5 py-2.5">
           <i data-lucide="search" class="w-5 h-5 text-slate-400 mr-2 flex-shrink-0"></i>
           <input 
             type="text" 
             id="searchInput" 
             placeholder="Cari SLS, Desa, Kecamatan, atau ID SLS..." 
-            class="w-full bg-transparent text-sm sm:text-base text-slate-800 placeholder-slate-400 focus:outline-none"
+            class="w-full bg-transparent text-sm sm:text-base text-slate-100 placeholder-slate-400 focus:outline-none"
             autocomplete="off"
           />
-          <button id="clearSearchBtn" class="hidden text-slate-400 hover:text-slate-600 p-1 mr-1">
+          <button id="clearSearchBtn" class="hidden text-slate-400 hover:text-slate-200 p-1 mr-1">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
 
         <!-- Autocomplete Suggestions Dropdown -->
-        <div id="searchSuggestions" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 max-h-80 overflow-y-auto divide-y divide-slate-100 z-50">
+        <div id="searchSuggestions" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-slate-900/98 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/90 max-h-80 overflow-y-auto divide-y divide-slate-800 z-50">
           <!-- Dynamically populated -->
         </div>
       </div>
@@ -70,20 +70,20 @@
       <!-- Quick Action: Input Koordinat Modal Trigger -->
       <button 
         id="btnOpenCoordModal" 
-        class="pointer-events-auto h-11 px-3 sm:px-4 bg-white/95 backdrop-blur-md hover:bg-slate-50 text-slate-700 font-medium text-xs sm:text-sm rounded-2xl shadow-lg border border-slate-200/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
+        class="pointer-events-auto h-11 px-3 sm:px-4 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
         title="Input Koordinat Manual"
       >
-        <i data-lucide="map-pin" class="w-4 h-4 text-primary"></i>
+        <i data-lucide="map-pin" class="w-4 h-4 text-sky-400"></i>
         <span class="hidden sm:inline">Cek Koordinat</span>
       </button>
 
       <!-- Quick Action: Filter Hierarki Wilayah Trigger -->
       <button 
         id="btnOpenFilterModal" 
-        class="pointer-events-auto h-11 px-3 sm:px-4 bg-white/95 backdrop-blur-md hover:bg-slate-50 text-slate-700 font-medium text-xs sm:text-sm rounded-2xl shadow-lg border border-slate-200/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
+        class="pointer-events-auto h-11 px-3 sm:px-4 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
         title="Pilih Kecamatan & Desa"
       >
-        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-emerald-600"></i>
+        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-emerald-400"></i>
         <span class="hidden sm:inline">Filter</span>
       </button>
     </div>
@@ -98,7 +98,7 @@
       <!-- Tombol Deteksi Lokasi Sekarang (GPS) -->
       <button 
         id="btnGps" 
-        class="w-11 h-11 bg-primary hover:bg-primary-dark text-white rounded-2xl shadow-lg border border-primary-dark/20 flex items-center justify-center transition active:scale-95 group"
+        class="w-11 h-11 bg-primary hover:bg-primary-dark text-white rounded-2xl shadow-xl border border-sky-400/30 flex items-center justify-center transition active:scale-95 group"
         title="Deteksi Lokasi Saya Sekarang (GPS)"
       >
         <i data-lucide="crosshair" id="gpsIcon" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
@@ -107,7 +107,7 @@
       <!-- Tombol Basemap -->
       <button 
         id="btnBasemap" 
-        class="w-11 h-11 bg-white/95 backdrop-blur-md text-slate-700 hover:text-primary hover:bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center transition active:scale-95 group"
+        class="w-11 h-11 bg-slate-900/95 backdrop-blur-md text-slate-200 hover:text-sky-400 hover:bg-slate-800 rounded-2xl shadow-xl border border-slate-700/80 flex items-center justify-center transition active:scale-95 group"
         title="Pilih Basemap (Peta Dasar)"
       >
         <i data-lucide="layers" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
@@ -119,7 +119,7 @@
       <!-- Tombol Home (Reset Selayar) -->
       <button 
         id="btnHome" 
-        class="w-11 h-11 bg-white/95 backdrop-blur-md text-slate-700 hover:text-primary hover:bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center transition active:scale-95 group"
+        class="w-11 h-11 bg-slate-900/95 backdrop-blur-md text-slate-200 hover:text-sky-400 hover:bg-slate-800 rounded-2xl shadow-xl border border-slate-700/80 flex items-center justify-center transition active:scale-95 group"
         title="Kembali ke Tampilan Awal (Kepulauan Selayar)"
       >
         <i data-lucide="home" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
@@ -131,10 +131,10 @@
       id="bottomSheet" 
       class="bottom-sheet hidden-drawer absolute left-0 right-0 bottom-0 z-30 max-w-xl mx-auto p-3 sm:p-4 pointer-events-auto"
     >
-      <div class="bg-white/98 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden">
+      <div class="bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/80 overflow-hidden text-slate-100">
         <!-- Drawer Pull Handle -->
         <div class="flex justify-center pt-2.5 pb-1 cursor-pointer" id="drawerHandle">
-          <div class="w-12 h-1.5 bg-slate-300 rounded-full"></div>
+          <div class="w-12 h-1.5 bg-slate-600 rounded-full"></div>
         </div>
 
         <div class="px-4 pb-3 sm:px-6 sm:pb-5">
@@ -142,31 +142,31 @@
           <div id="drawerHeader" class="flex items-start justify-between gap-3 pb-2 cursor-pointer select-none">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <span id="badgeStatus" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">
+                <span id="badgeStatus" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   SLS Terpilih
                 </span>
-                <span id="badgeGpsAccuracy" class="hidden inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                <span id="badgeGpsAccuracy" class="hidden inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   GPS ±5m
                 </span>
               </div>
-              <h2 id="slsName" class="text-base sm:text-lg font-bold text-slate-850 leading-snug truncate">
+              <h2 id="slsName" class="text-base sm:text-lg font-bold text-slate-100 leading-snug truncate">
                 Memuat Informasi...
               </h2>
-              <p id="slsDesaKec" class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 truncate">
+              <p id="slsDesaKec" class="text-xs sm:text-sm text-slate-400 font-medium mt-0.5 truncate">
                 Desa - Kecamatan
               </p>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
               <button 
                 id="btnToggleDrawer" 
-                class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition active:scale-95" 
+                class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition active:scale-95" 
                 title="Sembunyikan / Tampilkan Detail"
               >
                 <i data-lucide="chevron-down" id="drawerToggleIcon" class="w-5 h-5 transition-transform duration-200"></i>
               </button>
               <button 
                 id="btnCloseDrawer" 
-                class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition active:scale-95" 
+                class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition active:scale-95" 
                 title="Tutup Info"
               >
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -176,30 +176,30 @@
 
           <!-- Collapsible Body (Grid & Actions) -->
           <div id="drawerBody" class="drawer-body transition-all duration-300 overflow-hidden">
-            <div class="border-t border-slate-100 my-1"></div>
+            <div class="border-t border-slate-800 my-1"></div>
 
             <!-- Grid Details -->
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 py-2.5 text-xs sm:text-sm">
-              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
                 <span class="text-slate-400 block text-[11px]">ID SLS</span>
-                <div class="flex items-center justify-between font-mono font-semibold text-slate-800 mt-0.5">
+                <div class="flex items-center justify-between font-mono font-semibold text-slate-100 mt-0.5">
                   <span id="slsId" class="truncate">-</span>
-                  <button id="btnCopyId" class="text-slate-400 hover:text-primary p-0.5" title="Salin ID SLS">
+                  <button id="btnCopyId" class="text-slate-400 hover:text-sky-400 p-0.5" title="Salin ID SLS">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
 
-              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
                 <span class="text-slate-400 block text-[11px]">Estimasi Luas</span>
-                <span id="slsLuas" class="font-semibold text-slate-800 block mt-0.5 truncate">-</span>
+                <span id="slsLuas" class="font-semibold text-slate-100 block mt-0.5 truncate">-</span>
               </div>
 
-              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
+              <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60 col-span-2 sm:col-span-1">
                 <span class="text-slate-400 block text-[11px]">Koordinat Titik</span>
-                <div class="flex items-center justify-between font-mono text-slate-800 mt-0.5">
+                <div class="flex items-center justify-between font-mono text-slate-100 mt-0.5">
                   <span id="slsCoord" class="truncate text-[11px]">-</span>
-                  <button id="btnCopyCoord" class="text-slate-400 hover:text-primary p-0.5" title="Salin Koordinat">
+                  <button id="btnCopyCoord" class="text-slate-400 hover:text-sky-400 p-0.5" title="Salin Koordinat">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
@@ -213,14 +213,14 @@
                 href="#" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                class="flex-1 h-10 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 transition"
+                class="flex-1 h-10 bg-primary hover:bg-primary-dark text-white font-medium text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 transition shadow-lg shadow-primary/20"
               >
                 <i data-lucide="navigation" class="w-4 h-4"></i>
                 <span>Rute Google Maps</span>
               </a>
               <button 
                 id="btnShareInfo" 
-                class="h-10 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 transition"
+                class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 transition"
               >
                 <i data-lucide="share-2" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Salin Teks</span>
@@ -234,35 +234,35 @@
     <!-- Minimalist Floating Reopen Pill (Muncul saat drawer ditutup tetapi SLS masih terpilih) -->
     <button 
       id="btnReopenDrawer" 
-      class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 bg-white/95 backdrop-blur-md hover:bg-white text-slate-800 rounded-full shadow-xl border border-slate-200/90 flex items-center gap-2 transition-all transform active:scale-95 group pointer-events-auto"
+      class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-100 rounded-full shadow-2xl border border-slate-700/80 flex items-center gap-2 transition-all transform active:scale-95 group pointer-events-auto"
       title="Tampilkan Info SLS Terpilih"
     >
-      <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-      <span id="reopenSlsName" class="text-xs font-bold truncate max-w-[180px] sm:max-w-xs text-slate-800">Detail SLS</span>
-      <span class="text-[11px] font-semibold text-primary flex items-center gap-0.5 ml-1 pl-2 border-l border-slate-200">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+      <span id="reopenSlsName" class="text-xs font-bold truncate max-w-[180px] sm:max-w-xs text-slate-100">Detail SLS</span>
+      <span class="text-[11px] font-semibold text-sky-400 flex items-center gap-0.5 ml-1 pl-2 border-l border-slate-700">
         Buka <i data-lucide="chevron-up" class="w-3.5 h-3.5 transition-transform group-hover:-translate-y-0.5"></i>
       </span>
     </button>
   </main>
 
   <!-- MODAL: PILIH BASEMAP -->
-  <div id="modalBasemap" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-sm overflow-hidden p-5 animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+  <div id="modalBasemap" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-700/80 w-full max-w-sm overflow-hidden p-5 animate-in fade-in zoom-in-95 duration-150 text-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2">
-          <i data-lucide="layers" class="w-5 h-5 text-primary"></i>
-          <h3 class="font-bold text-slate-800 text-base">Pilih Peta Dasar (Basemap)</h3>
+          <i data-lucide="layers" class="w-5 h-5 text-sky-400"></i>
+          <h3 class="font-bold text-slate-100 text-base">Pilih Peta Dasar (Basemap)</h3>
         </div>
-        <button id="btnCloseBasemapModal" class="text-slate-400 hover:text-slate-600 p-1">
+        <button id="btnCloseBasemapModal" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <div class="grid grid-cols-1 gap-2.5 mt-4" id="basemapOptions">
         <!-- Option Google Maps Satellite (Default) -->
-        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="google-satellite">
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-700/80 hover:border-sky-400/60 cursor-pointer transition basemap-card bg-slate-800/80 hover:bg-slate-800" data-basemap="google-satellite">
           <input type="radio" name="basemapChoice" value="google-satellite" checked class="text-primary focus:ring-primary w-4 h-4 ml-1">
-          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-700 flex-shrink-0 ml-3">
             <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <radialGradient id="googlesat" cx="40%" cy="40%" r="60%">
@@ -279,15 +279,15 @@
             </svg>
           </div>
           <div class="ml-3 min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-slate-800">Google Maps Satelit</span>
-            <span class="block text-xs text-slate-500 truncate">Foto satelit jernih resolusi tinggi</span>
+            <span class="block text-sm font-semibold text-slate-100">Google Maps Satelit</span>
+            <span class="block text-xs text-slate-400 truncate">Foto satelit jernih resolusi tinggi</span>
           </div>
         </label>
 
         <!-- Option Google Maps Hybrid -->
-        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="hybrid">
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-700/80 hover:border-sky-400/60 cursor-pointer transition basemap-card bg-slate-800/80 hover:bg-slate-800" data-basemap="hybrid">
           <input type="radio" name="basemapChoice" value="hybrid" class="text-primary focus:ring-primary w-4 h-4 ml-1">
-          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-700 flex-shrink-0 ml-3">
             <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <radialGradient id="hybgrad" cx="40%" cy="40%" r="60%">
@@ -307,15 +307,15 @@
             </svg>
           </div>
           <div class="ml-3 min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-slate-800">Google Maps Hybrid</span>
-            <span class="block text-xs text-slate-500 truncate">Citra satelit dengan nama jalan</span>
+            <span class="block text-sm font-semibold text-slate-100">Google Maps Hybrid</span>
+            <span class="block text-xs text-slate-400 truncate">Citra satelit dengan nama jalan</span>
           </div>
         </label>
 
         <!-- Option Esri Satellite -->
-        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="satellite">
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-700/80 hover:border-sky-400/60 cursor-pointer transition basemap-card bg-slate-800/80 hover:bg-slate-800" data-basemap="satellite">
           <input type="radio" name="basemapChoice" value="satellite" class="text-primary focus:ring-primary w-4 h-4 ml-1">
-          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-700 flex-shrink-0 ml-3">
             <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <radialGradient id="esrigrad" cx="40%" cy="40%" r="60%">
@@ -333,15 +333,15 @@
             </svg>
           </div>
           <div class="ml-3 min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-slate-800">Citra Satelit Esri</span>
-            <span class="block text-xs text-slate-500 truncate">Foto udara resolusi tinggi</span>
+            <span class="block text-sm font-semibold text-slate-100">Citra Satelit Esri</span>
+            <span class="block text-xs text-slate-400 truncate">Foto udara resolusi tinggi</span>
           </div>
         </label>
 
         <!-- Option OSM -->
-        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="osm">
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-700/80 hover:border-sky-400/60 cursor-pointer transition basemap-card bg-slate-800/80 hover:bg-slate-800" data-basemap="osm">
           <input type="radio" name="basemapChoice" value="osm" class="text-primary focus:ring-primary w-4 h-4 ml-1">
-          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-700 flex-shrink-0 ml-3">
             <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <rect width="54" height="54" fill="#f4f3f0"/>
               <path d="M0 0 L24 0 L18 54 L0 54 Z" fill="#d1e6d3"/>
@@ -354,8 +354,8 @@
             </svg>
           </div>
           <div class="ml-3 min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-slate-800">OpenStreetMap</span>
-            <span class="block text-xs text-slate-500 truncate">Peta jalan & toponimi standar</span>
+            <span class="block text-sm font-semibold text-slate-100">OpenStreetMap</span>
+            <span class="block text-xs text-slate-400 truncate">Peta jalan & toponimi standar</span>
           </div>
         </label>
       </div>
@@ -363,72 +363,72 @@
   </div>
 
   <!-- MODAL: INPUT KOORDINAT MANUAL -->
-  <div id="modalCoord" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden p-5 animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+  <div id="modalCoord" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-700/80 w-full max-w-md overflow-hidden p-5 animate-in fade-in zoom-in-95 duration-150 text-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2">
-          <i data-lucide="map-pin" class="w-5 h-5 text-primary"></i>
-          <h3 class="font-bold text-slate-800 text-base">Cek Titik Koordinat</h3>
+          <i data-lucide="map-pin" class="w-5 h-5 text-sky-400"></i>
+          <h3 class="font-bold text-slate-100 text-base">Cek Titik Koordinat</h3>
         </div>
-        <button id="btnCloseCoordModal" class="text-slate-400 hover:text-slate-600 p-1">
+        <button id="btnCloseCoordModal" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <div class="mt-4 space-y-3.5">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">
             Format Cepat (Salin dari Google Maps / CAPI)
           </label>
           <input 
             type="text" 
             id="inputCoordQuick" 
             placeholder="Contoh: -6.49178, 120.48547" 
-            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary focus:outline-none font-mono"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none font-mono"
           />
           <p class="text-[11px] text-slate-400 mt-1">Mendukung format paste `Latitude, Longitude` sekaligus.</p>
         </div>
 
         <div class="relative flex items-center justify-center">
-          <div class="border-t border-slate-200 w-full"></div>
-          <span class="bg-white px-2 text-[11px] text-slate-400 uppercase font-semibold">atau input manual</span>
-          <div class="border-t border-slate-200 w-full"></div>
+          <div class="border-t border-slate-800 w-full"></div>
+          <span class="bg-slate-900 px-2 text-[11px] text-slate-400 uppercase font-semibold">atau input manual</span>
+          <div class="border-t border-slate-800 w-full"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Latitude (Lintang)</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Latitude (Lintang)</label>
             <input 
               type="number" 
               step="any" 
               id="inputLat" 
               placeholder="-6.49178" 
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary focus:outline-none font-mono"
+              class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none font-mono"
             />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Longitude (Bujur)</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Longitude (Bujur)</label>
             <input 
               type="number" 
               step="any" 
               id="inputLng" 
               placeholder="120.48547" 
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary focus:outline-none font-mono"
+              class="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 placeholder-slate-500 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none font-mono"
             />
           </div>
         </div>
 
         <!-- Contoh Titik Cepat -->
         <div>
-          <span class="text-[11px] font-semibold text-slate-500 block mb-1">Contoh Titik Sampel:</span>
+          <span class="text-[11px] font-semibold text-slate-400 block mb-1">Contoh Titik Sampel:</span>
           <div class="flex flex-wrap gap-1.5">
-            <button class="sample-coord-btn px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-mono transition" data-lat="-6.1215" data-lng="120.4623">
+            <button class="sample-coord-btn px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 font-mono transition" data-lat="-6.1215" data-lng="120.4623">
               Kota Benteng
             </button>
-            <button class="sample-coord-btn px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-mono transition" data-lat="-6.4907" data-lng="120.4828">
+            <button class="sample-coord-btn px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 font-mono transition" data-lat="-6.4907" data-lng="120.4828">
               Bunging, Appatanah
             </button>
-            <button class="sample-coord-btn px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-mono transition" data-lat="-6.7025" data-lng="121.1520">
+            <button class="sample-coord-btn px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 font-mono transition" data-lat="-6.7025" data-lng="121.1520">
               Takabonerate
             </button>
           </div>
@@ -446,42 +446,51 @@
   </div>
 
   <!-- MODAL: FILTER HIERARKI WILAYAH -->
-  <div id="modalFilter" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden p-5 animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+  <div id="modalFilter" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-700/80 w-full max-w-md overflow-hidden p-5 animate-in fade-in zoom-in-95 duration-150 text-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2">
-          <i data-lucide="sliders-horizontal" class="w-5 h-5 text-emerald-600"></i>
-          <h3 class="font-bold text-slate-800 text-base">Pilih Wilayah Bertingkat</h3>
+          <i data-lucide="sliders-horizontal" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="font-bold text-slate-100 text-base">Pilih Wilayah Bertingkat</h3>
         </div>
-        <button id="btnCloseFilterModal" class="text-slate-400 hover:text-slate-600 p-1">
+        <button id="btnCloseFilterModal" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <div class="mt-4 space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">1. Pilih Kecamatan</label>
-          <select id="filterKecamatan" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">1. Pilih Kecamatan</label>
+          <select id="filterKecamatan" class="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none">
             <option value="">-- Semua / Pilih Kecamatan --</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">2. Pilih Desa / Kelurahan</label>
-          <select id="filterDesa" disabled class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary focus:outline-none bg-slate-50 disabled:opacity-50">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">2. Pilih Desa / Kelurahan</label>
+          <select id="filterDesa" disabled class="w-full px-3 py-2.5 rounded-xl border border-slate-700 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none bg-slate-800 text-slate-100 disabled:opacity-40 disabled:bg-slate-900/60">
             <option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">3. Pilih Satuan Lingkungan Setempat (SLS)</label>
-          <select id="filterSls" disabled class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary focus:outline-none bg-slate-50 disabled:opacity-50">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">3. Pilih Satuan Lingkungan Setempat (SLS)</label>
+          <select id="filterSls" disabled class="w-full px-3 py-2.5 rounded-xl border border-slate-700 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none bg-slate-800 text-slate-100 disabled:opacity-40 disabled:bg-slate-900/60">
             <option value="">-- Pilih Desa Terlebih Dahulu --</option>
           </select>
         </div>
 
         <button 
           id="btnApplyFilter" 
+          disabled
+          class="w-full mt-2 h-11 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-semibold text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
+        >
+          <i data-lucide="map" class="w-4 h-4"></i>
+          <span>Tampilkan di Peta</span>
+        </button>
+      </div>
+    </div>
+  </div>
           disabled
           class="w-full mt-2 h-11 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2"
         >

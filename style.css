@@ -131,7 +131,7 @@ body, html {
 }
 
 .bottom-sheet.is-minimized #drawerHandle div {
-  background-color: #0284c7;
+  background-color: #38bdf8;
   width: 32px;
 }
 
@@ -139,34 +139,27 @@ body, html {
   padding-bottom: 0;
 }
 
-body.basemap-satellite .bottom-sheet.is-minimized #drawerHandle div {
-  background-color: #38bdf8;
-}
-
 /* Floating Reopen Pill Styling */
 #btnReopenDrawer {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-}
-
-body.basemap-satellite #btnReopenDrawer {
   background-color: rgba(15, 23, 42, 0.95) !important;
   color: #f8fafc !important;
   border-color: rgba(56, 189, 248, 0.4) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.2) !important;
 }
 
-body.basemap-satellite #btnReopenDrawer span.text-slate-800 {
+#btnReopenDrawer span.text-slate-800 {
   color: #f8fafc !important;
 }
 
-body.basemap-satellite #btnReopenDrawer .border-l {
+#btnReopenDrawer .border-l {
   border-color: rgba(51, 65, 85, 0.8) !important;
 }
 
-body.basemap-satellite #btnToggleDrawer {
+#btnToggleDrawer {
   color: #94a3b8 !important;
 }
-body.basemap-satellite #btnToggleDrawer:hover {
+#btnToggleDrawer:hover {
   background-color: #334155 !important;
   color: #ffffff !important;
 }
@@ -188,39 +181,45 @@ body.basemap-satellite #btnToggleDrawer:hover {
   pointer-events: auto;
 }
 
-/* Custom scrollbars */
+/* Custom scrollbars (Permanent Dark) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #0f172a;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #334155;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #475569;
 }
 
-/* Leaflet Customization */
+/* Form native selects dark styling */
+select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Leaflet Customization (Permanent Dark Glassmorphism) */
 .leaflet-control-zoom {
-  border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
   border-radius: 16px !important;
   overflow: hidden;
   margin: 0 !important;
 }
 
 .leaflet-control-zoom a {
-  background-color: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(15, 23, 42, 0.95) !important;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  color: #334155 !important;
+  color: #f8fafc !important;
   border: none !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.8) !important;
   width: 44px !important;
   height: 44px !important;
   line-height: 44px !important;
@@ -238,31 +237,39 @@ body.basemap-satellite #btnToggleDrawer:hover {
 
 .leaflet-control-zoom a:hover,
 .leaflet-control-zoom a:active {
-  background-color: #ffffff !important;
-  color: #0284c7 !important;
+  background-color: rgba(30, 41, 59, 1) !important;
+  color: #38bdf8 !important;
 }
 
 .leaflet-control-attribution {
   font-size: 10px !important;
-  background: rgba(255, 255, 255, 0.75) !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #94a3b8 !important;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   padding: 2px 6px !important;
   border-top-left-radius: 6px;
 }
 
-/* SLS Polygon Tooltip */
-.sls-tooltip {
-  background-color: rgba(15, 23, 42, 0.88) !important;
-  border: none !important;
-  color: #ffffff !important;
+.leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}
+
+/* SLS Polygon Tooltip (Universal High Contrast) */
+.sls-tooltip,
+.sls-tooltip.satellite-tooltip {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid #38bdf8 !important;
+  color: #f8fafc !important;
   border-radius: 6px !important;
   font-size: 11px !important;
   font-weight: 500 !important;
   padding: 4px 8px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25) !important;
 }
-.sls-tooltip::before {
-  border-top-color: rgba(15, 23, 42, 0.88) !important;
+.sls-tooltip::before,
+.sls-tooltip.satellite-tooltip::before {
+  border-top-color: rgba(15, 23, 42, 0.95) !important;
 }
 
 /* Leaflet DivIcon Clean Reset */
@@ -272,110 +279,9 @@ body.basemap-satellite #btnToggleDrawer:hover {
   border: none !important;
 }
 
-/* Satellite Tooltip High Contrast */
-.sls-tooltip.satellite-tooltip {
-  background-color: rgba(15, 23, 42, 0.95) !important;
-  border: 1px solid #38bdf8 !important;
-  color: #f8fafc !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
-}
-
-/* Basemap Satellite Mode Adaptations */
-body.basemap-satellite .leaflet-control-zoom {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid rgba(56, 189, 248, 0.3) !important;
-}
-body.basemap-satellite .leaflet-control-zoom a {
-  background-color: rgba(15, 23, 42, 0.92) !important;
-  color: #f8fafc !important;
-  border-bottom-color: rgba(51, 65, 85, 0.8) !important;
-}
-body.basemap-satellite .leaflet-control-zoom a:hover,
-body.basemap-satellite .leaflet-control-zoom a:active {
-  background-color: rgba(30, 41, 59, 0.98) !important;
-  color: #38bdf8 !important;
-}
-
-body.basemap-satellite #btnBasemap,
-body.basemap-satellite #btnHome {
-  background-color: rgba(15, 23, 42, 0.92) !important;
-  color: #f8fafc !important;
-  border-color: rgba(56, 189, 248, 0.3) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-}
-body.basemap-satellite #btnBasemap:hover,
-body.basemap-satellite #btnHome:hover {
-  background-color: rgba(30, 41, 59, 0.98) !important;
-  color: #38bdf8 !important;
-}
-
-body.basemap-satellite #bottomSheet > div {
-  background-color: rgba(15, 23, 42, 0.95) !important;
-  border-color: rgba(56, 189, 248, 0.3) !important;
-  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.15) !important;
-}
-
-body.basemap-satellite #badgeStatus {
-  background-color: #f59e0b !important;
-  color: #0f172a !important;
-  font-weight: 700 !important;
-}
-
-body.basemap-satellite #slsName {
-  color: #f8fafc !important;
-}
-
-body.basemap-satellite #slsDesaKec {
-  color: #94a3b8 !important;
-}
-
-body.basemap-satellite #bottomSheet .border-slate-100 {
-  border-color: rgba(51, 65, 85, 0.7) !important;
-}
-
-body.basemap-satellite #bottomSheet .bg-slate-50 {
-  background-color: rgba(30, 41, 59, 0.8) !important;
-  border-color: rgba(51, 65, 85, 0.8) !important;
-}
-
-body.basemap-satellite #bottomSheet .text-slate-800 {
-  color: #f1f5f9 !important;
-}
-
-body.basemap-satellite #bottomSheet .text-slate-400 {
-  color: #94a3b8 !important;
-}
-
-body.basemap-satellite #btnShareInfo {
-  background-color: #334155 !important;
-  color: #f8fafc !important;
-}
-body.basemap-satellite #btnShareInfo:hover {
-  background-color: #475569 !important;
-}
-
-body.basemap-satellite #btnGoogleMaps {
-  background-color: #0284c7 !important;
-}
-body.basemap-satellite #btnGoogleMaps:hover {
-  background-color: #0369a1 !important;
-}
-
-body.basemap-satellite #btnCloseDrawer {
-  color: #94a3b8 !important;
-}
-body.basemap-satellite #btnCloseDrawer:hover {
-  background-color: #334155 !important;
-  color: #ffffff !important;
-}
-
-body.basemap-satellite #drawerHandle > div {
-  background-color: #475569 !important;
-}
-
 /* Glassmorphism utility */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
