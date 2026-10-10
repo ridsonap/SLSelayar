@@ -887,7 +887,7 @@ function performSearch(query) {
 function renderSuggestions(results) {
   if (results.length === 0) {
     DOM.searchSuggestions.innerHTML = `
-      <div class="p-3 text-xs text-slate-400 text-center">
+      <div class="p-3 text-xs text-slate-400 text-center bg-slate-900">
         Tidak ditemukan SLS, Desa, atau Kecamatan yang cocok.
       </div>
     `;
@@ -896,29 +896,26 @@ function renderSuggestions(results) {
   }
 
   DOM.searchSuggestions.innerHTML = results.slice(0, 20).map((res, index) => {
-    let badgeClass = 'bg-slate-800 text-slate-300 border border-slate-700';
+    let badgeClass = 'bg-slate-800 text-slate-200 border border-slate-700';
     let badgeText = 'SLS';
-    let iconName = 'map-pin';
 
     if (res.type === 'kecamatan') {
-      badgeClass = 'bg-indigo-950/80 text-indigo-300 border border-indigo-700/60';
+      badgeClass = 'bg-indigo-900 text-indigo-200 border border-indigo-700';
       badgeText = 'KECAMATAN';
-      iconName = 'landmark';
     } else if (res.type === 'desa') {
-      badgeClass = 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60';
+      badgeClass = 'bg-emerald-900 text-emerald-200 border border-emerald-700';
       badgeText = 'DESA';
-      iconName = 'home';
     }
 
     return `
-      <div class="suggestion-item p-3 hover:bg-slate-800/80 cursor-pointer flex items-center justify-between transition" data-index="${index}">
+      <div class="suggestion-item p-3 hover:bg-slate-800 cursor-pointer flex items-center justify-between transition" data-index="${index}">
         <div class="flex items-center gap-2.5 overflow-hidden">
           <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeClass} uppercase flex-shrink-0">
             ${badgeText}
           </span>
           <div class="truncate">
-            <div class="text-sm font-semibold text-slate-100 truncate">${res.title}</div>
-            <div class="text-xs text-slate-400 truncate">${res.subtitle}</div>
+            <div class="suggestion-title text-sm font-semibold text-slate-100 truncate">${res.title}</div>
+            <div class="suggestion-subtitle text-xs text-slate-400 truncate">${res.subtitle}</div>
           </div>
         </div>
         <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 flex-shrink-0 ml-2"></i>

@@ -204,6 +204,37 @@ select option {
   color: #f8fafc !important;
 }
 
+/* Autocomplete Search Dropdown (Solid Dark Theme, No Transparency) */
+#searchSuggestions {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
+.suggestion-item {
+  background-color: #0f172a !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none !important;
+}
+
+.suggestion-item:hover,
+.suggestion-item:active {
+  background-color: #1e293b !important;
+}
+
+.suggestion-title {
+  color: #f8fafc !important;
+}
+
+.suggestion-subtitle {
+  color: #94a3b8 !important;
+}
+
 /* Leaflet Customization (Permanent Dark Glassmorphism) */
 .leaflet-control-zoom {
   border: 1px solid rgba(56, 189, 248, 0.3) !important;
