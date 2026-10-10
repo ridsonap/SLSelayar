@@ -230,38 +230,77 @@
 
       <div class="grid grid-cols-1 gap-2.5 mt-4" id="basemapOptions">
         <!-- Option OSM -->
-        <label class="flex items-center p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="osm">
-          <input type="radio" name="basemapChoice" value="osm" checked class="text-primary focus:ring-primary w-4 h-4">
-          <div class="ml-3">
-            <span class="block text-sm font-semibold text-slate-800">OpenStreetMap (Standar)</span>
-            <span class="block text-xs text-slate-500">Peta jalan & batas nama geografis resmi</span>
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="osm">
+          <input type="radio" name="basemapChoice" value="osm" checked class="text-primary focus:ring-primary w-4 h-4 ml-1">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+            <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <rect width="54" height="54" fill="#f4f3f0"/>
+              <path d="M0 0 L24 0 L18 54 L0 54 Z" fill="#d1e6d3"/>
+              <path d="M38 0 L54 0 L54 36 L44 54 Z" fill="#b9dcfa"/>
+              <path d="M0 24 Q 28 20, 54 28" stroke="#ffffff" stroke-width="6" fill="none"/>
+              <path d="M0 24 Q 28 20, 54 28" stroke="#fcd34d" stroke-width="3" fill="none"/>
+              <path d="M22 0 L26 54" stroke="#ffffff" stroke-width="4" fill="none"/>
+              <path d="M22 0 L26 54" stroke="#fdba74" stroke-width="2" fill="none"/>
+              <circle cx="28" cy="22" r="3.5" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="ml-3 min-w-0 flex-1">
+            <span class="block text-sm font-semibold text-slate-800">OpenStreetMap</span>
+            <span class="block text-xs text-slate-500 truncate">Peta jalan & toponimi standar</span>
           </div>
         </label>
 
         <!-- Option Esri Satellite -->
-        <label class="flex items-center p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="satellite">
-          <input type="radio" name="basemapChoice" value="satellite" class="text-primary focus:ring-primary w-4 h-4">
-          <div class="ml-3">
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="satellite">
+          <input type="radio" name="basemapChoice" value="satellite" class="text-primary focus:ring-primary w-4 h-4 ml-1">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+            <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="esrigrad" cx="40%" cy="40%" r="60%">
+                  <stop offset="0%" stop-color="#3f5e34"/>
+                  <stop offset="50%" stop-color="#223a1e"/>
+                  <stop offset="100%" stop-color="#142416"/>
+                </radialGradient>
+              </defs>
+              <rect width="54" height="54" fill="#0f2b48"/>
+              <path d="M0 38 Q 15 22, 32 30 T 54 20 L 54 54 L 0 54 Z" fill="#1b4965"/>
+              <path d="M0 0 L 40 0 Q 35 24, 20 32 T 0 38 Z" fill="url(#esrigrad)"/>
+              <path d="M8 8 Q 18 12, 14 22 T 6 28 Z" fill="#4d7240" opacity="0.8"/>
+              <path d="M22 4 Q 30 10, 26 18 Z" fill="#304a29" opacity="0.9"/>
+              <path d="M0 0 L 39 0 Q 34 23, 19 31 T 0 37 Z" stroke="#8cb369" stroke-width="0.8" fill="none" opacity="0.6"/>
+            </svg>
+          </div>
+          <div class="ml-3 min-w-0 flex-1">
             <span class="block text-sm font-semibold text-slate-800">Citra Satelit Esri</span>
-            <span class="block text-xs text-slate-500">Foto udara resolusi tinggi (bangunan & atap rumah)</span>
+            <span class="block text-xs text-slate-500 truncate">Foto udara resolusi tinggi</span>
           </div>
         </label>
 
-        <!-- Option Hybrid -->
-        <label class="flex items-center p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="hybrid">
-          <input type="radio" name="basemapChoice" value="hybrid" class="text-primary focus:ring-primary w-4 h-4">
-          <div class="ml-3">
-            <span class="block text-sm font-semibold text-slate-800">Satelit Hybrid (Berlabel)</span>
-            <span class="block text-xs text-slate-500">Citra satelit dilengkapi nama jalan & toponimi</span>
+        <!-- Option Google Maps Hybrid -->
+        <label class="flex items-center p-2.5 sm:p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="hybrid">
+          <input type="radio" name="basemapChoice" value="hybrid" class="text-primary focus:ring-primary w-4 h-4 ml-1">
+          <div class="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 flex-shrink-0 ml-3">
+            <svg viewBox="0 0 54 54" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="hybgrad" cx="40%" cy="40%" r="60%">
+                  <stop offset="0%" stop-color="#335028"/>
+                  <stop offset="60%" stop-color="#1e3318"/>
+                  <stop offset="100%" stop-color="#0f1c0d"/>
+                </radialGradient>
+              </defs>
+              <rect width="54" height="54" fill="#0f2742"/>
+              <path d="M0 0 L 42 0 Q 36 26, 22 34 T 0 40 Z" fill="url(#hybgrad)"/>
+              <path d="M0 18 Q 24 16, 54 24" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+              <path d="M22 0 L 25 54" stroke="#ffffff" stroke-width="2" fill="none"/>
+              <path d="M22 0 L 25 54" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
+              <circle cx="34" cy="20" r="2.5" fill="#ef4444" stroke="#ffffff" stroke-width="1"/>
+              <rect x="2" y="38" width="24" height="8" rx="2" fill="#000" fill-opacity="0.6"/>
+              <rect x="4" y="41" width="20" height="3" rx="1" fill="#fff" fill-opacity="0.9"/>
+            </svg>
           </div>
-        </label>
-
-        <!-- Option Carto Positron -->
-        <label class="flex items-center p-3 rounded-2xl border border-slate-200 hover:border-primary/50 cursor-pointer transition basemap-card bg-slate-50 hover:bg-sky-50/50" data-basemap="carto">
-          <input type="radio" name="basemapChoice" value="carto" class="text-primary focus:ring-primary w-4 h-4">
-          <div class="ml-3">
-            <span class="block text-sm font-semibold text-slate-800">Carto Positron (Terang)</span>
-            <span class="block text-xs text-slate-500">Peta minimalis abu-abu, batas SLS terlihat sangat tegas</span>
+          <div class="ml-3 min-w-0 flex-1">
+            <span class="block text-sm font-semibold text-slate-800">Google Maps Hybrid</span>
+            <span class="block text-xs text-slate-500 truncate">Citra satelit dengan nama jalan</span>
           </div>
         </label>
       </div>

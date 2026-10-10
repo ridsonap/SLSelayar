@@ -12,6 +12,9 @@ const state = {
   gpsMarker: null,
   gpsCircle: null,
   clickMarker: null,
+  selectedLabelMarker: null,
+  selectedFeature: null,
+  selectedCenterLatLng: null,
   activeBasemap: 'osm',
   basemapLayers: {},
   featuresWithBbox: [],
@@ -99,19 +102,11 @@ function initMap() {
     }),
     satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      attribution: 'Tiles &copy; Esri &mdash; World Imagery'
     }),
-    hybrid: L.layerGroup([
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
-      }),
-      L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
-      })
-    ]),
-    carto: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    hybrid: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
       maxZoom: 20,
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+      attribution: '&copy; Google Maps'
     })
   };
 
@@ -125,6 +120,10 @@ function initMap() {
 /**
  * 2. Basemap Switcher Logic
  */
+function isSatelliteBasemap() {
+  return state.activeBasemap === 'satellite' || state.activeBasemap === 'hybrid';
+}
+
 function setBasemap(type) {
   if (!state.basemapLayers[type]) return;
 
@@ -139,12 +138,30 @@ function setBasemap(type) {
   state.basemapLayers[type].addTo(state.map);
   state.activeBasemap = type;
 
-  // If geojson layer is loaded, bring it to front
+  const isSat = isSatelliteBasemap();
+
+  // Update body class for satellite theme styling
+  if (isSat) {
+    document.body.classList.add('basemap-satellite');
+  } else {
+    document.body.classList.remove('basemap-satellite');
+  }
+
+  // If geojson layer is loaded, update boundary colors & bring to front
   if (state.geojsonLayer) {
+    state.geojsonLayer.setStyle(getSlsNormalStyle);
     state.geojsonLayer.bringToFront();
   }
+
+  // If highlight layer is active, update highlight style & bring to front
   if (state.highlightLayer) {
+    state.highlightLayer.setStyle(isSat ? SATELLITE_HIGHLIGHT_STYLE : NORMAL_HIGHLIGHT_STYLE);
     state.highlightLayer.bringToFront();
+  }
+
+  // Update on-map card label if feature is currently selected
+  if (state.selectedFeature && state.selectedCenterLatLng) {
+    updateSelectedOnMapLabel(state.selectedFeature, state.selectedCenterLatLng);
   }
 
   showToast(`Peta dasar diubah ke: ${getBasemapLabel(type)}`, 'info');
@@ -152,10 +169,9 @@ function setBasemap(type) {
 
 function getBasemapLabel(type) {
   switch (type) {
-    case 'osm': return 'OpenStreetMap';
+    case 'osm': return 'OpenStreetMap (Standar)';
     case 'satellite': return 'Citra Satelit Esri';
-    case 'hybrid': return 'Satelit Hybrid';
-    case 'carto': return 'Carto Positron';
+    case 'hybrid': return 'Google Maps Hybrid';
     default: return type;
   }
 }
@@ -176,9 +192,9 @@ async function loadGeoJsonData() {
 
     DOM.loadingText.textContent = 'Memproses 721 wilayah SLS & indeks spasial...';
 
-    // Calculate BBOX for each feature for ultra-fast PIP checking
-    const kecSet = new Set();
-    const desaSet = new Set();
+    // Calculate BBOX and extract hierarchy with administrative codes
+    const kecMap = new Map();
+    const desaMap = new Map();
 
     data.features.forEach((feature, index) => {
       const bbox = computeFeatureBbox(feature);
@@ -189,31 +205,43 @@ async function loadGeoJsonData() {
       });
 
       const p = feature.properties;
-      if (p.nmkec) kecSet.add(p.nmkec.trim());
-      if (p.nmkec && p.nmdesa) {
-        desaSet.add(JSON.stringify({ kec: p.nmkec.trim(), desa: p.nmdesa.trim() }));
+      const nmkec = (p.nmkec || '').trim();
+      const nmdesa = (p.nmdesa || '').trim();
+      const kdkec = (p.kdkec || '').trim();
+      const kddesa = (p.kddesa || '').trim();
+
+      if (nmkec && !kecMap.has(nmkec)) {
+        kecMap.set(nmkec, kdkec);
+      }
+      const desaKey = `${nmkec}|${nmdesa}`;
+      if (nmkec && nmdesa && !desaMap.has(desaKey)) {
+        desaMap.set(desaKey, { kec: nmkec, desa: nmdesa, kdkec, kddesa });
       }
     });
 
-    state.kecamatanList = Array.from(kecSet).sort();
-    state.desaList = Array.from(desaSet).map(s => JSON.parse(s)).sort((a, b) => a.desa.localeCompare(b.desa));
+    state.kecamatanList = Array.from(kecMap.entries())
+      .map(([name, code]) => ({ name, code }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    state.desaList = Array.from(desaMap.values())
+      .sort((a, b) => a.desa.localeCompare(b.desa));
 
     // Render Layer on Map
     state.geojsonLayer = L.geoJSON(data, {
       style: getSlsNormalStyle,
       onEachFeature: (feature, layer) => {
-        // Fast hover tooltip
         const p = feature.properties;
-        const tooltipContent = `<b>${p.nmsls || 'SLS'}</b><br>${p.nmdesa}, ${p.nmkec}`;
+        const tooltipContent = `<b>[${p.kdsls || '-'}] ${p.nmsls || 'SLS'}</b><br>[${p.kddesa || '-'}] Desa ${p.nmdesa}, [${p.kdkec || '-'}] Kec ${p.nmkec}`;
         layer.bindTooltip(tooltipContent, {
           sticky: true,
-          className: 'sls-tooltip',
+          className: isSatelliteBasemap() ? 'sls-tooltip satellite-tooltip' : 'sls-tooltip',
           direction: 'top'
         });
 
         // Click on polygon
         layer.on('click', (e) => {
           L.DomEvent.stopPropagation(e);
+          setClickMarker(e.latlng.lat, e.latlng.lng);
           selectFeature(feature, e.latlng);
         });
       }
@@ -244,23 +272,57 @@ async function loadGeoJsonData() {
 /**
  * Styling Rules
  */
-function getSlsNormalStyle(feature) {
-  return {
-    fillColor: '#0284c7',
-    weight: 1.2,
-    opacity: 0.85,
-    color: '#0369a1',
-    fillOpacity: 0.15
-  };
-}
+const NORMAL_STYLE = {
+  fillColor: '#0284c7',
+  weight: 1.2,
+  opacity: 0.85,
+  color: '#0369a1',
+  fillOpacity: 0.15
+};
 
-const HIGHLIGHT_STYLE = {
+const SATELLITE_STYLE = {
+  fillColor: '#38bdf8',
+  weight: 1.6,
+  opacity: 0.95,
+  color: '#38bdf8', // bright electric cyan outline for satellite basemap
+  fillOpacity: 0.18
+};
+
+const NORMAL_HIGHLIGHT_STYLE = {
   fillColor: '#f59e0b',
   weight: 3,
   opacity: 1,
   color: '#b45309',
   fillOpacity: 0.45
 };
+
+const SATELLITE_HIGHLIGHT_STYLE = {
+  fillColor: '#f59e0b',
+  weight: 3.5,
+  opacity: 1,
+  color: '#fef08a', // bright yellow border on dark satellite basemap
+  fillOpacity: 0.5
+};
+
+const NORMAL_GROUP_HIGHLIGHT_STYLE = {
+  fillColor: '#f59e0b',
+  weight: 2,
+  opacity: 0.95,
+  color: '#d97706',
+  fillOpacity: 0.35
+};
+
+const SATELLITE_GROUP_HIGHLIGHT_STYLE = {
+  fillColor: '#f59e0b',
+  weight: 2.2,
+  opacity: 1,
+  color: '#fef08a',
+  fillOpacity: 0.4
+};
+
+function getSlsNormalStyle() {
+  return isSatelliteBasemap() ? SATELLITE_STYLE : NORMAL_STYLE;
+}
 
 /**
  * Compute Bounding Box for [minLng, minLat, maxLng, maxLat]
@@ -357,29 +419,41 @@ function selectFeature(feature, clickLatLng = null, gpsAccuracy = null) {
   // Clear previous highlight
   if (state.highlightLayer) {
     state.map.removeLayer(state.highlightLayer);
+    state.highlightLayer = null;
   }
+
+  const isSat = isSatelliteBasemap();
 
   // Draw highlight polygon
   state.highlightLayer = L.geoJSON(feature, {
-    style: HIGHLIGHT_STYLE
+    style: isSat ? SATELLITE_HIGHLIGHT_STYLE : NORMAL_HIGHLIGHT_STYLE
   }).addTo(state.map);
 
   const p = feature.properties;
 
   // Calculate center coordinate for display
   let displayLat, displayLng;
+  let centerLatLng;
   if (clickLatLng) {
     displayLat = clickLatLng.lat.toFixed(6);
     displayLng = clickLatLng.lng.toFixed(6);
+    centerLatLng = clickLatLng;
   } else {
-    const center = state.highlightLayer.getBounds().getCenter();
-    displayLat = center.lat.toFixed(6);
-    displayLng = center.lng.toFixed(6);
+    centerLatLng = state.highlightLayer.getBounds().getCenter();
+    displayLat = centerLatLng.lat.toFixed(6);
+    displayLng = centerLatLng.lng.toFixed(6);
   }
 
-  // Populate Bottom Sheet Drawer
-  DOM.slsName.textContent = p.nmsls || 'Tanpa Nama SLS';
-  DOM.slsDesaKec.textContent = `Desa ${p.nmdesa || '-'}, Kec. ${p.nmkec || '-'}`;
+  state.selectedFeature = feature;
+  state.selectedCenterLatLng = centerLatLng;
+
+  // Format codes for SLS, Desa, and Kecamatan
+  const slsCode = p.kdsls ? `[${p.kdsls}] ` : '';
+  const desaCode = p.kddesa ? `[${p.kddesa}] ` : '';
+  const kecCode = p.kdkec ? `[${p.kdkec}] ` : '';
+
+  DOM.slsName.textContent = `${slsCode}${p.nmsls || 'Tanpa Nama SLS'}`;
+  DOM.slsDesaKec.textContent = `${desaCode}Desa ${p.nmdesa || '-'}, ${kecCode}Kec ${p.nmkec || '-'}`;
   DOM.slsId.textContent = p.idsls || '-';
   
   const luasVal = p.luas ? `${Number(p.luas).toFixed(3)} km²` : '-';
@@ -400,10 +474,95 @@ function selectFeature(feature, clickLatLng = null, gpsAccuracy = null) {
   DOM.btnGoogleMaps.href = `https://www.google.com/maps/dir/?api=1&destination=${displayLat},${displayLng}`;
 
   // Store data for share
-  DOM.btnShareInfo.dataset.shareText = `📍 Informasi SLS Kepulauan Selayar:\n• SLS: ${p.nmsls}\n• Desa: ${p.nmdesa}\n• Kec: ${p.nmkec}\n• ID SLS: ${p.idsls}\n• Titik: ${displayLat}, ${displayLng}\n• Maps: https://www.google.com/maps?q=${displayLat},${displayLng}`;
+  DOM.btnShareInfo.dataset.shareText = `📍 Informasi SLS Kepulauan Selayar:\n• SLS: ${slsCode}${p.nmsls || '-'}\n• Wilayah: ${desaCode}Desa ${p.nmdesa || '-'}, ${kecCode}Kec ${p.nmkec || '-'}\n• ID SLS: ${p.idsls}\n• Titik: ${displayLat}, ${displayLng}\n• Maps: https://www.google.com/maps?q=${displayLat},${displayLng}`;
+
+  // Update on-map card label
+  updateSelectedOnMapLabel(feature, centerLatLng);
 
   // Open Drawer
   openDrawer();
+}
+
+function updateSelectedOnMapLabel(feature, latlng) {
+  if (state.selectedLabelMarker) {
+    state.map.removeLayer(state.selectedLabelMarker);
+    state.selectedLabelMarker = null;
+  }
+
+  const p = feature.properties;
+  const isSat = isSatelliteBasemap();
+
+  const slsCode = p.kdsls ? `[${p.kdsls}] ` : '';
+  const desaCode = p.kddesa ? `[${p.kddesa}] ` : '';
+  const kecCode = p.kdkec ? `[${p.kdkec}] ` : '';
+  const wilayahSub = `${desaCode}Desa ${p.nmdesa || '-'}, ${kecCode}Kec ${p.nmkec || '-'}`;
+
+  const html = isSat
+    ? `<div class="selected-sls-map-card sat-card">
+         <div class="sat-title"><span class="sat-code">${slsCode}</span>${p.nmsls || 'SLS'}</div>
+         <div class="sat-sub">${wilayahSub}</div>
+       </div>`
+    : `<div class="selected-sls-map-card osm-card">
+         <div class="osm-title"><span class="osm-code">${slsCode}</span>${p.nmsls || 'SLS'}</div>
+         <div class="osm-sub">${wilayahSub}</div>
+       </div>`;
+
+  const labelIcon = L.divIcon({
+    className: 'selected-sls-divicon',
+    html: html,
+    iconAnchor: [90, 42]
+  });
+
+  state.selectedLabelMarker = L.marker(latlng, {
+    icon: labelIcon,
+    interactive: false,
+    zIndexOffset: 1000
+  }).addTo(state.map);
+}
+
+/**
+ * Highlight multiple features (all SLS in a Kecamatan or Desa)
+ */
+function highlightMultipleFeatures(features, label) {
+  if (state.highlightLayer) {
+    state.map.removeLayer(state.highlightLayer);
+    state.highlightLayer = null;
+  }
+  if (state.clickMarker) {
+    state.map.removeLayer(state.clickMarker);
+    state.clickMarker = null;
+  }
+  if (state.selectedLabelMarker) {
+    state.map.removeLayer(state.selectedLabelMarker);
+    state.selectedLabelMarker = null;
+  }
+  state.selectedFeature = null;
+  state.selectedCenterLatLng = null;
+
+  if (!features || features.length === 0) return;
+
+  const isSat = isSatelliteBasemap();
+  state.highlightLayer = L.geoJSON(features, {
+    style: isSat ? SATELLITE_GROUP_HIGHLIGHT_STYLE : NORMAL_GROUP_HIGHLIGHT_STYLE,
+    onEachFeature: (feature, layer) => {
+      const p = feature.properties;
+      const tooltipContent = `<b>[${p.kdsls || '-'}] ${p.nmsls || 'SLS'}</b><br>[${p.kddesa || '-'}] Desa ${p.nmdesa}, [${p.kdkec || '-'}] Kec ${p.nmkec}`;
+      layer.bindTooltip(tooltipContent, {
+        sticky: true,
+        className: isSat ? 'sls-tooltip satellite-tooltip' : 'sls-tooltip',
+        direction: 'top'
+      });
+      layer.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        setClickMarker(e.latlng.lat, e.latlng.lng);
+        selectFeature(feature, e.latlng);
+      });
+    }
+  }).addTo(state.map);
+
+  state.map.fitBounds(state.highlightLayer.getBounds(), { padding: [30, 30], animate: true });
+  closeDrawer();
+  showToast(`Menampilkan & highlight ${label} (${features.length} SLS)`, 'info');
 }
 
 function openDrawer() {
@@ -422,18 +581,28 @@ function closeDrawer() {
 function onMapClick(e) {
   const { lat, lng } = e.latlng;
 
-  // Add click pin marker
-  setClickMarker(lat, lng);
-
   // Check which SLS contains this point
   const feature = findSlsByCoordinate(lat, lng);
 
   if (feature) {
+    setClickMarker(lat, lng);
     selectFeature(feature, e.latlng);
   } else {
+    // When clicking outside Kepulauan Selayar: do NOT show marker
+    if (state.clickMarker) {
+      state.map.removeLayer(state.clickMarker);
+      state.clickMarker = null;
+    }
     if (state.highlightLayer) {
       state.map.removeLayer(state.highlightLayer);
+      state.highlightLayer = null;
     }
+    if (state.selectedLabelMarker) {
+      state.map.removeLayer(state.selectedLabelMarker);
+      state.selectedLabelMarker = null;
+    }
+    state.selectedFeature = null;
+    state.selectedCenterLatLng = null;
     closeDrawer();
     showToast(`Titik (${lat.toFixed(5)}, ${lng.toFixed(5)}) berada di luar SLS Kepulauan Selayar`, 'warning');
   }
@@ -463,70 +632,94 @@ function handleGeolocation() {
     return;
   }
 
+  // Check secure context for mobile browsers (iOS Safari & Chrome Android require HTTPS for GPS)
+  if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showToast('GPS pada HP wajib menggunakan koneksi aman (HTTPS). Buka dengan https://', 'error');
+    return;
+  }
+
   // Show loading indicator on button
   DOM.btnGps.disabled = true;
   DOM.btnGps.classList.add('opacity-80');
   DOM.gpsIcon.classList.add('animate-spin');
   showToast('Mencari sinyal GPS akurat...', 'info');
 
-  const options = {
-    enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 0
+  const onLocationSuccess = (position) => {
+    DOM.btnGps.disabled = false;
+    DOM.btnGps.classList.remove('opacity-80');
+    DOM.gpsIcon.classList.remove('animate-spin');
+
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const accuracy = position.coords.accuracy || 10;
+
+    // Update GPS visual marker
+    updateGpsMarker(lat, lng, accuracy);
+
+    // Zoom to user location
+    state.map.setView([lat, lng], 17, { animate: true });
+
+    // Run spatial check
+    const feature = findSlsByCoordinate(lat, lng);
+    if (feature) {
+      selectFeature(feature, { lat, lng }, accuracy);
+      showToast(`Lokasi terdeteksi di: [${feature.properties.kdsls || '-'}] ${feature.properties.nmsls}`, 'success');
+    } else {
+      if (state.highlightLayer) {
+        state.map.removeLayer(state.highlightLayer);
+        state.highlightLayer = null;
+      }
+      if (state.selectedLabelMarker) {
+        state.map.removeLayer(state.selectedLabelMarker);
+        state.selectedLabelMarker = null;
+      }
+      state.selectedFeature = null;
+      state.selectedCenterLatLng = null;
+      closeDrawer();
+      showToast(`Lokasi GPS terdeteksi (${lat.toFixed(5)}, ${lng.toFixed(5)}) berada di luar batas wilayah SLS Selayar.`, 'warning');
+    }
+  };
+
+  const onLocationError = (error) => {
+    // If high accuracy times out on mobile, fallback to standard cellular/wifi accuracy
+    if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+      navigator.geolocation.getCurrentPosition(
+        onLocationSuccess,
+        (fallbackErr) => {
+          DOM.btnGps.disabled = false;
+          DOM.btnGps.classList.remove('opacity-80');
+          DOM.gpsIcon.classList.remove('animate-spin');
+          showToast(getGeoErrorMessage(fallbackErr), 'error');
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      );
+      return;
+    }
+
+    DOM.btnGps.disabled = false;
+    DOM.btnGps.classList.remove('opacity-80');
+    DOM.gpsIcon.classList.remove('animate-spin');
+    showToast(getGeoErrorMessage(error), 'error');
   };
 
   navigator.geolocation.getCurrentPosition(
-    (position) => {
-      // Success
-      DOM.btnGps.disabled = false;
-      DOM.btnGps.classList.remove('opacity-80');
-      DOM.gpsIcon.classList.remove('animate-spin');
-
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const accuracy = position.coords.accuracy;
-
-      // Update GPS visual marker
-      updateGpsMarker(lat, lng, accuracy);
-
-      // Smooth zoom to user location
-      state.map.setView([lat, lng], 17, { animate: true });
-
-      // Run spatial check
-      const feature = findSlsByCoordinate(lat, lng);
-      if (feature) {
-        selectFeature(feature, { lat, lng }, accuracy);
-        showToast(`Lokasi terdeteksi di: ${feature.properties.nmsls}`, 'success');
-      } else {
-        if (state.highlightLayer) {
-          state.map.removeLayer(state.highlightLayer);
-        }
-        closeDrawer();
-        showToast(`Lokasi Anda (${lat.toFixed(5)}, ${lng.toFixed(5)}) berada di luar batas SLS Kepulauan Selayar.`, 'warning');
-      }
-    },
-    (error) => {
-      // Error
-      DOM.btnGps.disabled = false;
-      DOM.btnGps.classList.remove('opacity-80');
-      DOM.gpsIcon.classList.remove('animate-spin');
-
-      let msg = 'Gagal mendeteksi lokasi.';
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          msg = 'Izin akses lokasi GPS ditolak oleh pengguna.';
-          break;
-        case error.POSITION_UNAVAILABLE:
-          msg = 'Sinyal posisi GPS tidak tersedia.';
-          break;
-        case error.TIMEOUT:
-          msg = 'Waktu pencarian sinyal GPS habis (timeout).';
-          break;
-      }
-      showToast(msg, 'error');
-    },
-    options
+    onLocationSuccess,
+    onLocationError,
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
   );
+}
+
+function getGeoErrorMessage(error) {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return 'Izin akses GPS ditolak. Silakan aktifkan izin lokasi di peramban HP.';
+    case error.POSITION_UNAVAILABLE:
+      return 'Sinyal posisi GPS tidak tersedia pada perangkat.';
+    case error.TIMEOUT:
+      return 'Waktu pencarian sinyal GPS habis. Coba pastikan GPS HP aktif.';
+    default:
+      return 'Gagal mendeteksi lokasi GPS.';
+  }
 }
 
 function updateGpsMarker(lat, lng, accuracy) {
@@ -567,7 +760,19 @@ function handleHomeButton() {
 
   if (state.clickMarker) {
     state.map.removeLayer(state.clickMarker);
+    state.clickMarker = null;
   }
+  if (state.highlightLayer) {
+    state.map.removeLayer(state.highlightLayer);
+    state.highlightLayer = null;
+  }
+  if (state.selectedLabelMarker) {
+    state.map.removeLayer(state.selectedLabelMarker);
+    state.selectedLabelMarker = null;
+  }
+  state.selectedFeature = null;
+  state.selectedCenterLatLng = null;
+  closeDrawer();
 
   showToast('Tampilan peta dikembalikan ke Kabupaten Kepulauan Selayar', 'info');
 }
@@ -616,13 +821,13 @@ function performSearch(query) {
   const q = query.toLowerCase();
 
   // 1. Search Kecamatan matches
-  state.kecamatanList.forEach(kec => {
-    if (kec.toLowerCase().includes(q)) {
+  state.kecamatanList.forEach(k => {
+    if (k.name.toLowerCase().includes(q)) {
       results.push({
         type: 'kecamatan',
-        title: `Kecamatan ${kec}`,
+        title: `[${k.code}] Kecamatan ${k.name}`,
         subtitle: 'Kabupaten Kepulauan Selayar',
-        value: kec
+        value: k.name
       });
     }
   });
@@ -632,8 +837,8 @@ function performSearch(query) {
     if (item.desa.toLowerCase().includes(q)) {
       results.push({
         type: 'desa',
-        title: `Desa ${item.desa}`,
-        subtitle: `Kecamatan ${item.kec}`,
+        title: `[${item.kddesa}] Desa ${item.desa}`,
+        subtitle: `[${item.kdkec}] Kecamatan ${item.kec}`,
         value: item
       });
     }
@@ -648,10 +853,13 @@ function performSearch(query) {
     const idsls = (p.idsls || '').toLowerCase();
 
     if (nmsls.includes(q) || idsls.includes(q)) {
+      const slsCode = p.kdsls ? `[${p.kdsls}] ` : '';
+      const desaCode = p.kddesa ? `[${p.kddesa}] ` : '';
+      const kecCode = p.kdkec ? `[${p.kdkec}] ` : '';
       results.push({
         type: 'sls',
-        title: p.nmsls || 'SLS',
-        subtitle: `Desa ${p.nmdesa}, Kec. ${p.nmkec} (ID: ${p.idsls})`,
+        title: `${slsCode}${p.nmsls || 'SLS'}`,
+        subtitle: `${desaCode}Desa ${p.nmdesa}, ${kecCode}Kec ${p.nmkec} (ID: ${p.idsls})`,
         value: item.feature
       });
       slsMatches++;
@@ -723,31 +931,25 @@ function handleSelectSuggestion(item) {
     const tempLayer = L.geoJSON(feature);
     const bounds = tempLayer.getBounds();
     state.map.fitBounds(bounds, { maxZoom: 17, padding: [40, 40], animate: true });
-    selectFeature(feature);
-    showToast(`Menampilkan: ${feature.properties.nmsls}`, 'success');
+    const center = bounds.getCenter();
+    setClickMarker(center.lat, center.lng);
+    selectFeature(feature, center);
+    const p = feature.properties;
+    showToast(`Menampilkan: [${p.kdsls || '-'}] ${p.nmsls}`, 'success');
   } else if (item.type === 'desa') {
     const desaObj = item.value;
-    // Find all features of this desa and fitBounds
     const desaFeatures = state.featuresWithBbox
       .filter(f => f.feature.properties.nmkec === desaObj.kec && f.feature.properties.nmdesa === desaObj.desa)
       .map(f => f.feature);
-    
-    if (desaFeatures.length > 0) {
-      const groupLayer = L.geoJSON(desaFeatures);
-      state.map.fitBounds(groupLayer.getBounds(), { padding: [30, 30], animate: true });
-      showToast(`Menampilkan Desa ${desaObj.desa} (${desaFeatures.length} SLS)`, 'info');
-    }
+    highlightMultipleFeatures(desaFeatures, `[${desaObj.kddesa}] Desa ${desaObj.desa}`);
   } else if (item.type === 'kecamatan') {
     const kecName = item.value;
     const kecFeatures = state.featuresWithBbox
       .filter(f => f.feature.properties.nmkec === kecName)
       .map(f => f.feature);
-
-    if (kecFeatures.length > 0) {
-      const groupLayer = L.geoJSON(kecFeatures);
-      state.map.fitBounds(groupLayer.getBounds(), { padding: [30, 30], animate: true });
-      showToast(`Menampilkan Kecamatan ${kecName} (${kecFeatures.length} SLS)`, 'info');
-    }
+    const kecObj = state.kecamatanList.find(k => k.name === kecName);
+    const kecCode = kecObj ? `[${kecObj.code}] ` : '';
+    highlightMultipleFeatures(kecFeatures, `${kecCode}Kecamatan ${kecName}`);
   }
 }
 
@@ -820,17 +1022,29 @@ function processCoordinateInput() {
   DOM.modalCoord.classList.remove('show-modal');
   DOM.modalCoord.classList.add('hidden-modal');
 
-  // Place marker
-  setClickMarker(lat, lng);
-  state.map.setView([lat, lng], 16, { animate: true });
-
   // Lookup SLS
   const feature = findSlsByCoordinate(lat, lng);
   if (feature) {
+    setClickMarker(lat, lng);
+    state.map.setView([lat, lng], 16, { animate: true });
     selectFeature(feature, { lat, lng });
-    showToast(`Koordinat masuk ke: ${feature.properties.nmsls}`, 'success');
+    showToast(`Koordinat masuk ke: [${feature.properties.kdsls || '-'}] ${feature.properties.nmsls}`, 'success');
   } else {
-    if (state.highlightLayer) state.map.removeLayer(state.highlightLayer);
+    // Do NOT show marker outside Selayar
+    if (state.clickMarker) {
+      state.map.removeLayer(state.clickMarker);
+      state.clickMarker = null;
+    }
+    if (state.highlightLayer) {
+      state.map.removeLayer(state.highlightLayer);
+      state.highlightLayer = null;
+    }
+    if (state.selectedLabelMarker) {
+      state.map.removeLayer(state.selectedLabelMarker);
+      state.selectedLabelMarker = null;
+    }
+    state.selectedFeature = null;
+    state.selectedCenterLatLng = null;
     closeDrawer();
     showToast(`Koordinat (${lat.toFixed(5)}, ${lng.toFixed(5)}) di luar SLS Kepulauan Selayar.`, 'warning');
   }
@@ -852,7 +1066,7 @@ function initFilterModal() {
 
   DOM.filterKecamatan.addEventListener('change', () => {
     const selKec = DOM.filterKecamatan.value;
-    DOM.filterDesa.innerHTML = '<option value="">-- Pilih Desa / Kelurahan --</option>';
+    DOM.filterDesa.innerHTML = '<option value="">-- Semua Desa di Kecamatan ini --</option>';
     DOM.filterSls.innerHTML = '<option value="">-- Pilih Desa Terlebih Dahulu --</option>';
     DOM.filterSls.disabled = true;
 
@@ -866,7 +1080,7 @@ function initFilterModal() {
     filteredDesa.forEach(d => {
       const opt = document.createElement('option');
       opt.value = d.desa;
-      opt.textContent = d.desa;
+      opt.textContent = `[${d.kddesa}] Desa ${d.desa}`;
       DOM.filterDesa.appendChild(opt);
     });
 
@@ -889,9 +1103,10 @@ function initFilterModal() {
     );
 
     slsInDesa.forEach(item => {
+      const p = item.feature.properties;
       const opt = document.createElement('option');
-      opt.value = item.feature.properties.idsls;
-      opt.textContent = `${item.feature.properties.nmsls || 'SLS'} (${item.feature.properties.idsls})`;
+      opt.value = p.idsls;
+      opt.textContent = `[${p.kdsls || '-'}] ${p.nmsls || 'SLS'} (${p.idsls})`;
       DOM.filterSls.appendChild(opt);
     });
 
@@ -911,30 +1126,34 @@ function initFilterModal() {
       if (target) {
         const bounds = L.geoJSON(target.feature).getBounds();
         state.map.fitBounds(bounds, { maxZoom: 17, padding: [40, 40] });
-        selectFeature(target.feature);
+        const center = bounds.getCenter();
+        setClickMarker(center.lat, center.lng);
+        selectFeature(target.feature, center);
       }
     } else if (desa) {
       const desaFeatures = state.featuresWithBbox
         .filter(f => f.feature.properties.nmkec === kec && f.feature.properties.nmdesa === desa)
         .map(f => f.feature);
-      state.map.fitBounds(L.geoJSON(desaFeatures).getBounds(), { padding: [30, 30] });
-      showToast(`Menampilkan Desa ${desa}`, 'info');
+      const desaObj = state.desaList.find(d => d.kec === kec && d.desa === desa);
+      const desaCode = desaObj ? `[${desaObj.kddesa}] ` : '';
+      highlightMultipleFeatures(desaFeatures, `${desaCode}Desa ${desa}`);
     } else if (kec) {
       const kecFeatures = state.featuresWithBbox
         .filter(f => f.feature.properties.nmkec === kec)
         .map(f => f.feature);
-      state.map.fitBounds(L.geoJSON(kecFeatures).getBounds(), { padding: [30, 30] });
-      showToast(`Menampilkan Kecamatan ${kec}`, 'info');
+      const kecObj = state.kecamatanList.find(k => k.name === kec);
+      const kecCode = kecObj ? `[${kecObj.code}] ` : '';
+      highlightMultipleFeatures(kecFeatures, `${kecCode}Kecamatan ${kec}`);
     }
   });
 }
 
 function populateFilterDropdowns() {
   DOM.filterKecamatan.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-  state.kecamatanList.forEach(kec => {
+  state.kecamatanList.forEach(k => {
     const opt = document.createElement('option');
-    opt.value = kec;
-    opt.textContent = `Kec. ${kec}`;
+    opt.value = k.name;
+    opt.textContent = `[${k.code}] Kec. ${k.name}`;
     DOM.filterKecamatan.appendChild(opt);
   });
 }

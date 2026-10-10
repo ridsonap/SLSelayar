@@ -156,6 +156,147 @@ body, html {
   border-top-color: rgba(15, 23, 42, 0.88) !important;
 }
 
+/* Leaflet DivIcon Clean Reset */
+.leaflet-div-icon.gps-pulse-icon,
+.leaflet-div-icon.custom-pin,
+.leaflet-div-icon.selected-sls-divicon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Selected SLS Floating On-Map Badge */
+.selected-sls-map-card {
+  min-width: 170px;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  pointer-events: none;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  white-space: normal;
+}
+
+.selected-sls-map-card.osm-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #0284c7;
+  color: #0f172a;
+}
+.selected-sls-map-card.osm-card .osm-title {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.25;
+  color: #0284c7;
+}
+.selected-sls-map-card.osm-card .osm-code {
+  color: #0369a1;
+  font-weight: 800;
+  margin-right: 3px;
+}
+.selected-sls-map-card.osm-card .osm-sub {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.selected-sls-map-card.sat-card {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid #facc15;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.4), 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+.selected-sls-map-card.sat-card .sat-title {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.25;
+  color: #ffffff;
+}
+.selected-sls-map-card.sat-card .sat-code {
+  color: #facc15;
+  font-weight: 800;
+  margin-right: 3px;
+}
+.selected-sls-map-card.sat-card .sat-sub {
+  font-size: 10px;
+  color: #e2e8f0;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* Satellite Tooltip High Contrast */
+.sls-tooltip.satellite-tooltip {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid #38bdf8 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Basemap Satellite Mode Adaptations for Bottom Sheet & Info */
+body.basemap-satellite #bottomSheet > div {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.15) !important;
+}
+
+body.basemap-satellite #badgeStatus {
+  background-color: #f59e0b !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+body.basemap-satellite #slsName {
+  color: #f8fafc !important;
+}
+
+body.basemap-satellite #slsDesaKec {
+  color: #94a3b8 !important;
+}
+
+body.basemap-satellite #bottomSheet .border-slate-100 {
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+
+body.basemap-satellite #bottomSheet .bg-slate-50 {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(51, 65, 85, 0.8) !important;
+}
+
+body.basemap-satellite #bottomSheet .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+body.basemap-satellite #bottomSheet .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+body.basemap-satellite #btnShareInfo {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+}
+body.basemap-satellite #btnShareInfo:hover {
+  background-color: #475569 !important;
+}
+
+body.basemap-satellite #btnGoogleMaps {
+  background-color: #0284c7 !important;
+}
+body.basemap-satellite #btnGoogleMaps:hover {
+  background-color: #0369a1 !important;
+}
+
+body.basemap-satellite #btnCloseDrawer {
+  color: #94a3b8 !important;
+}
+body.basemap-satellite #btnCloseDrawer:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+body.basemap-satellite #drawerHandle > div {
+  background-color: #475569 !important;
+}
+
 /* Glassmorphism utility */
 .glass-panel {
   background: rgba(255, 255, 255, 0.92);
