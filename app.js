@@ -1412,6 +1412,17 @@ function initExcelModal() {
     DOM.modalExcel.classList.add('hidden-modal');
   });
 
+  // Switch to Excel Modal from Coord Modal
+  const btnSwitchFromCoord = document.getElementById('btnSwitchToExcelFromCoord');
+  if (btnSwitchFromCoord) {
+    btnSwitchFromCoord.addEventListener('click', () => {
+      DOM.modalCoord.classList.remove('show-modal');
+      DOM.modalCoord.classList.add('hidden-modal');
+      DOM.modalExcel.classList.remove('hidden-modal');
+      DOM.modalExcel.classList.add('show-modal');
+    });
+  }
+
   // Drag and Drop & File Input
   DOM.excelDropzone.addEventListener('click', () => {
     DOM.excelFileInput.click();

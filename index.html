@@ -83,11 +83,11 @@
       <!-- Quick Action: Upload Excel Modal Trigger -->
       <button 
         id="btnOpenExcelModal" 
-        class="pointer-events-auto h-11 px-3 sm:px-3.5 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
-        title="Upload File Excel / CSV Koordinat"
+        class="pointer-events-auto h-11 px-3 sm:px-3.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 font-semibold text-xs sm:text-sm rounded-2xl shadow-xl border border-emerald-500/60 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
+        title="Upload File Excel / CSV Koordinat (Banyak Titik)"
       >
         <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
-        <span class="hidden md:inline">Upload Excel</span>
+        <span class="inline"><span class="hidden sm:inline">Upload </span>Excel</span>
       </button>
 
       <!-- Quick Action: Filter Hierarki Wilayah Trigger -->
@@ -417,6 +417,26 @@
       </div>
 
       <div class="mt-4 space-y-3.5">
+        <!-- Shortcut Banner ke Upload Excel -->
+        <div class="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-100">Banyak Titik Sekaligus?</div>
+              <div class="text-[11px] text-slate-400 truncate">Upload file Excel (.xlsx / .csv)</div>
+            </div>
+          </div>
+          <button 
+            id="btnSwitchToExcelFromCoord" 
+            type="button"
+            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow transition whitespace-nowrap flex-shrink-0 active:scale-95"
+          >
+            Upload Excel
+          </button>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">
             Format Cepat (Salin dari Google Maps / CAPI)
