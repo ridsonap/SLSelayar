@@ -1,5 +1,5 @@
 // Service Worker for SLS Finder Kepulauan Selayar
-const CACHE_NAME = 'sls-selayar-v7';
+const CACHE_NAME = 'sls-selayar-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -63,6 +63,7 @@ self.addEventListener('fetch', (event) => {
           networkResponse &&
           networkResponse.status === 200 &&
           (event.request.url.includes('unpkg.com') ||
+           event.request.url.includes('cdn.jsdelivr.net') ||
            event.request.url.includes('cdn.tailwindcss.com') ||
            event.request.url.includes('fonts.googleapis.com'))
         ) {

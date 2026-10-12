@@ -105,10 +105,16 @@ Kabupaten Kepulauan Selayar terdiri dari 11 kecamatan yang tersebar di pulau uta
   - Label nama SLS yang muncul dinamis saat zoom level memadai (>= level 14) agar peta tidak terlalu padat (*cluttered*).
 - **FR-4.4**: Filter Hierarkis (Opsional / Nilai Tambah):
   - Dropdown bertingkat: Pilih Kecamatan -> Pilih Desa -> Pilih SLS untuk memfokuskan peta.
-- **FR-4.5**: Tombol aksi pada kartu info:
-  - *Salin Koordinat*: Menyalin `lat, lng` ke clipboard.
-  - *Buka di Google Maps*: Membuka titik koordinat di Google Maps untuk panduan rute (navigasi arah).
-  - *Bagikan Tautan*: Deep-link URL yang memuat parameter koordinat/ID SLS (`https://.../?idsls=73010300030002`).
+### Modul 5: Batch Upload Koordinat (Excel / CSV)
+- **FR-5.1**: Fitur upload berkas `.xlsx`, `.xls`, dan `.csv` tanpa ketergantungan server (100% *client-side* via pustaka SheetJS).
+- **FR-5.2**: Deteksi otomatis nama kolom koordinat (Latitude / Lintang / Y dan Longitude / Bujur / X) serta kolom nama responden/label, dengan dukungan konfigurasi manual jika format kolom kustom.
+- **FR-5.3**: Algoritma verifikasi spasial massal *Point-in-Polygon* ke seluruh 721 poligon SLS Selayar secara instan (<100ms untuk ratusan titik).
+- **FR-5.4**: Visualisasi sebaran titik di peta (*Canvas / CircleMarkers*) dengan pengkodean warna status:
+  - Hijau: Titik di dalam SLS Kepulauan Selayar.
+  - Merah: Titik di luar wilayah Selayar (*outlier*).
+- **FR-5.5**: Pratinjau tabel interaktif dengan filter status dan tombol fokus/sorot SLS langsung di peta.
+- **FR-5.6**: Ekspor hasil verifikasi kembali ke file Excel (`.xlsx`) dengan atribut tambahan: `STATUS_VERIFIKASI`, `ID_SLS_TERDETEKSI`, `NAMA_SLS_TERDETEKSI`, `DESA_TERDETEKSI`, dan `KECAMATAN_TERDETEKSI`.
+- **FR-5.7**: Tombol unduh *template* Excel standar untuk memandu pengguna menyiapkan data.
 
 ---
 

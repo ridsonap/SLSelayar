@@ -316,3 +316,57 @@ select option {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+/* Mobile Safe-Area Inset Support */
+header {
+  padding-top: max(env(safe-area-inset-top), 0.5rem);
+  padding-left: max(env(safe-area-inset-left), 0.5rem);
+  padding-right: max(env(safe-area-inset-right), 0.5rem);
+}
+
+.bottom-sheet {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+  padding-left: max(env(safe-area-inset-left), 0.75rem);
+  padding-right: max(env(safe-area-inset-right), 0.75rem);
+}
+
+/* Excel Feature Tab Buttons */
+.excel-tab-btn {
+  transition: all 0.15s ease;
+}
+.excel-tab-btn.active {
+  background-color: #1e293b !important;
+  color: #34d399 !important;
+  border-bottom: 2px solid #10b981 !important;
+}
+
+/* Custom Popup for Excel Points on Leaflet */
+.excel-point-popup .leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f8fafc !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.7), 0 0 16px rgba(16, 185, 129, 0.2) !important;
+  padding: 0 !important;
+}
+
+.excel-point-popup .leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+}
+
+.excel-point-popup .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.96) !important;
+}
+
+.excel-point-popup a.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 8px 10px !important;
+  font-size: 16px !important;
+}
+.excel-point-popup a.leaflet-popup-close-button:hover {
+  color: #f8fafc !important;
+}
+

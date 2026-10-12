@@ -34,6 +34,9 @@
   <!-- Turf.js for GeoSpatial PIP queries -->
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
+  <!-- SheetJS for Excel (.xlsx/.xls/.csv) parsing & export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -70,21 +73,31 @@
       <!-- Quick Action: Input Koordinat Modal Trigger -->
       <button 
         id="btnOpenCoordModal" 
-        class="pointer-events-auto h-11 px-3 sm:px-4 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
+        class="pointer-events-auto h-11 px-3 sm:px-3.5 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
         title="Input Koordinat Manual"
       >
         <i data-lucide="map-pin" class="w-4 h-4 text-sky-400"></i>
-        <span class="hidden sm:inline">Cek Koordinat</span>
+        <span class="hidden md:inline">Cek Koordinat</span>
+      </button>
+
+      <!-- Quick Action: Upload Excel Modal Trigger -->
+      <button 
+        id="btnOpenExcelModal" 
+        class="pointer-events-auto h-11 px-3 sm:px-3.5 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
+        title="Upload File Excel / CSV Koordinat"
+      >
+        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+        <span class="hidden md:inline">Upload Excel</span>
       </button>
 
       <!-- Quick Action: Filter Hierarki Wilayah Trigger -->
       <button 
         id="btnOpenFilterModal" 
-        class="pointer-events-auto h-11 px-3 sm:px-4 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
+        class="pointer-events-auto h-11 px-3 sm:px-3.5 bg-slate-900/95 backdrop-blur-md hover:bg-slate-800 text-slate-200 font-medium text-xs sm:text-sm rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
         title="Pilih Kecamatan & Desa"
       >
-        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-emerald-400"></i>
-        <span class="hidden sm:inline">Filter</span>
+        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-400"></i>
+        <span class="hidden md:inline">Filter</span>
       </button>
     </div>
   </header>
@@ -112,6 +125,34 @@
       >
         <i data-lucide="layers" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
       </button>
+    </div>
+
+    <!-- FLOATING EXCEL POINTS CONTROLS (Muncul jika titik Excel dimuat) -->
+    <div id="excelPointsWidget" class="hidden absolute top-[165px] sm:top-[176px] left-3 sm:left-4 z-20 flex flex-col gap-1.5 pointer-events-auto max-w-[240px]">
+      <div class="bg-slate-900/95 backdrop-blur-md rounded-2xl border border-emerald-500/40 shadow-2xl p-2.5 text-xs text-slate-200 flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-1.5">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
+            <span class="font-bold text-slate-100 truncate text-xs" id="excelWidgetTitle">0 Titik Excel</span>
+          </div>
+          <div class="flex items-center gap-0.5 flex-shrink-0">
+            <button id="btnToggleExcelVisibility" class="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition" title="Sembunyikan / Tampilkan Titik">
+              <i data-lucide="eye" id="excelEyeIcon" class="w-4 h-4"></i>
+            </button>
+            <button id="btnClearExcelPoints" class="p-1 rounded-lg hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition" title="Hapus Titik Excel">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-slate-300 bg-slate-800/80 px-2 py-1 rounded-xl">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> <span id="excelWidgetInCount">0</span> Masuk</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span> <span id="excelWidgetOutCount">0</span> Luar</span>
+        </div>
+        <button id="btnReopenExcelModal" class="w-full py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-center text-xs font-medium transition flex items-center justify-center gap-1.5">
+          <i data-lucide="list" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Lihat Tabel & Ekspor</span>
+        </button>
+      </div>
     </div>
 
     <!-- FLOATING MAP CONTROLS (BOTTOM RIGHT) -->
@@ -441,6 +482,163 @@
           <i data-lucide="crosshair" class="w-4 h-4"></i>
           <span>Periksa Posisi SLS</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: UPLOAD EXCEL / CSV KOORDINAT -->
+  <div id="modalExcel" class="modal-overlay hidden-modal fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-700/80 w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-100">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-100 text-base leading-tight">Upload Koordinat Excel / CSV</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Plot banyak titik dan verifikasi batas SLS otomatis</p>
+          </div>
+        </div>
+        <button id="btnCloseExcelModal" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Content (Scrollable) -->
+      <div class="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1" id="excelModalContent">
+        <!-- Section 1: Dropzone & File Input -->
+        <div id="excelUploadSection" class="space-y-3">
+          <div 
+            id="excelDropzone" 
+            class="border-2 border-dashed border-slate-700 hover:border-emerald-500/70 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-800/40 hover:bg-slate-800/70 transition group"
+          >
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" />
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform mb-3">
+              <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+            </div>
+            <span class="text-sm font-semibold text-slate-200">Pilih atau Tarik File Excel / CSV ke Sini</span>
+            <span class="text-xs text-slate-400 mt-1">Mendukung format .xlsx, .xls, dan .csv</span>
+            <span class="mt-3 px-3 py-1 rounded-full text-xs bg-slate-800 text-slate-300 border border-slate-700">
+              Klik untuk browse file
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <span>Belum punya format file?</span>
+            <button id="btnDownloadExcelTemplate" class="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 underline underline-offset-2 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Unduh Contoh Template Excel</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 2: Mapping Kolom (Hidden until file selected) -->
+        <div id="excelMappingSection" class="hidden space-y-3 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/70">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+              <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i>
+              Pemetaan Kolom (Auto-Detected)
+            </span>
+            <span id="excelFileMeta" class="text-[11px] text-slate-400 truncate max-w-[180px]">file.xlsx</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Kolom Latitude (Y) *</label>
+              <select id="selectLatCol" class="w-full px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500"></select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Kolom Longitude (X) *</label>
+              <select id="selectLngCol" class="w-full px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500"></select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Kolom Nama / Label</label>
+              <select id="selectLabelCol" class="w-full px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-slate-100 text-xs focus:ring-1 focus:ring-emerald-500"></select>
+            </div>
+          </div>
+
+          <button 
+            id="btnProcessExcelData" 
+            class="w-full h-10 mt-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5"
+          >
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Proses & Analisis Posisi SLS</span>
+          </button>
+        </div>
+
+        <!-- Section 3: Summary Results & Table (Hidden until processed) -->
+        <div id="excelResultSection" class="hidden space-y-3.5">
+          <!-- Summary Badges -->
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-slate-800/90 border border-slate-700/80 p-2.5 rounded-xl">
+              <span class="text-[11px] text-slate-400 block">Total Titik</span>
+              <span id="statTotalPoints" class="text-base font-bold text-slate-100">0</span>
+            </div>
+            <div class="bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-xl">
+              <span class="text-[11px] text-emerald-400 block">Masuk SLS</span>
+              <span id="statInPoints" class="text-base font-bold text-emerald-300">0</span>
+            </div>
+            <div class="bg-rose-950/40 border border-rose-800/50 p-2.5 rounded-xl">
+              <span class="text-[11px] text-rose-400 block">Luar Wilayah</span>
+              <span id="statOutPoints" class="text-base font-bold text-rose-300">0</span>
+            </div>
+          </div>
+
+          <!-- Filter tabs for table -->
+          <div class="flex items-center gap-1.5 border-b border-slate-800 pb-2">
+            <button class="excel-tab-btn active px-3 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-100" data-filter="all">Semua (<span id="tabCountAll">0</span>)</button>
+            <button class="excel-tab-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200" data-filter="inside">Masuk SLS (<span id="tabCountIn">0</span>)</button>
+            <button class="excel-tab-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200" data-filter="outside">Luar Selayar (<span id="tabCountOut">0</span>)</button>
+          </div>
+
+          <!-- Scrollable Table -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+            <table class="w-full text-left text-xs text-slate-200">
+              <thead class="bg-slate-800/80 text-slate-400 sticky top-0 text-[11px]">
+                <tr>
+                  <th class="p-2">#</th>
+                  <th class="p-2">Label</th>
+                  <th class="p-2">Koordinat</th>
+                  <th class="p-2">Status / SLS Terdeteksi</th>
+                  <th class="p-2 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="excelTableBody" class="divide-y divide-slate-800">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div class="p-3 sm:p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2 flex-shrink-0">
+        <button 
+          id="btnResetExcel" 
+          class="hidden px-3 py-2 text-xs text-slate-400 hover:text-slate-200 rounded-xl hover:bg-slate-800 transition"
+        >
+          Upload File Lain
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button 
+            id="btnExportExcelResult" 
+            disabled
+            class="h-10 px-3.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-slate-700 font-medium text-xs rounded-xl flex items-center gap-1.5 transition active:scale-95"
+            title="Download file Excel hasil verifikasi SLS"
+          >
+            <i data-lucide="file-output" class="w-4 h-4 text-emerald-400"></i>
+            <span>Unduh Hasil (.xlsx)</span>
+          </button>
+          <button 
+            id="btnViewExcelOnMap" 
+            disabled
+            class="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-semibold text-xs rounded-xl shadow-lg transition active:scale-95 flex items-center gap-1.5"
+          >
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            <span>Tampilkan di Peta</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

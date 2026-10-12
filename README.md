@@ -26,7 +26,13 @@ WebGIS modern, cepat, dan ringan berbasis static HTML/JS untuk mendeteksi posisi
    - **Carto Positron**: Tampilan terang minimalis agar garis batas SLS kontras dan jelas.
 7. **Filter Wilayah Bertingkat**:
    - Menu dropdown berjenjang: Pilih Kecamatan (11 pilihan) ➔ Pilih Desa ➔ Pilih SLS.
-8. **Dukungan PWA & Offline-Ready**:
+8. **Upload Koordinat Excel / CSV (Batch Point Verification)**:
+   - Unggah daftar koordinat banyak titik dari instrumen survei CAPI/FASIH/Excel (`.xlsx`, `.xls`, `.csv`).
+   - Auto-detect kolom Latitude & Longitude serta nama responden/label.
+   - Analisis *point-in-polygon* otomatis untuk seluruh titik: klasifikasi instan titik masuk SLS vs titik luar wilayah (outlier).
+   - Pratinjau tabel interaktif, sorot titik di peta, dan **unduh hasil verifikasi kembali ke file Excel (.xlsx)** lengkap dengan Nama SLS, ID SLS, Desa, dan Kecamatan.
+   - Dilengkapi tombol unduh contoh template Excel langsung dari aplikasi.
+9. **Dukungan PWA & Offline-Ready**:
    - Dilengkapi `manifest.json` dan `sw.js` (Service Worker) agar aset peta dan data GeoJSON tersimpan di cache lokal saat berada di area tanpa sinyal seluler (*blank spot*).
 
 ---

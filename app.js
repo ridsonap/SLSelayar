@@ -21,7 +21,14 @@ const state = {
   kecamatanList: [],
   desaList: [],
   selayarBounds: null,
-  isGeojsonLoaded: false
+  isGeojsonLoaded: false,
+  // Excel multi-points state
+  excelPoints: [],
+  excelPointsLayer: null,
+  excelRawData: [],
+  excelHeaders: [],
+  excelFileName: '',
+  isExcelLayerVisible: true
 };
 
 // UI Elements
@@ -79,7 +86,41 @@ const DOM = {
   filterKecamatan: document.getElementById('filterKecamatan'),
   filterDesa: document.getElementById('filterDesa'),
   filterSls: document.getElementById('filterSls'),
-  btnApplyFilter: document.getElementById('btnApplyFilter')
+  btnApplyFilter: document.getElementById('btnApplyFilter'),
+  // Excel Modal & Controls
+  btnOpenExcelModal: document.getElementById('btnOpenExcelModal'),
+  modalExcel: document.getElementById('modalExcel'),
+  btnCloseExcelModal: document.getElementById('btnCloseExcelModal'),
+  excelUploadSection: document.getElementById('excelUploadSection'),
+  excelDropzone: document.getElementById('excelDropzone'),
+  excelFileInput: document.getElementById('excelFileInput'),
+  btnDownloadExcelTemplate: document.getElementById('btnDownloadExcelTemplate'),
+  excelMappingSection: document.getElementById('excelMappingSection'),
+  excelFileMeta: document.getElementById('excelFileMeta'),
+  selectLatCol: document.getElementById('selectLatCol'),
+  selectLngCol: document.getElementById('selectLngCol'),
+  selectLabelCol: document.getElementById('selectLabelCol'),
+  btnProcessExcelData: document.getElementById('btnProcessExcelData'),
+  excelResultSection: document.getElementById('excelResultSection'),
+  statTotalPoints: document.getElementById('statTotalPoints'),
+  statInPoints: document.getElementById('statInPoints'),
+  statOutPoints: document.getElementById('statOutPoints'),
+  tabCountAll: document.getElementById('tabCountAll'),
+  tabCountIn: document.getElementById('tabCountIn'),
+  tabCountOut: document.getElementById('tabCountOut'),
+  excelTableBody: document.getElementById('excelTableBody'),
+  btnResetExcel: document.getElementById('btnResetExcel'),
+  btnExportExcelResult: document.getElementById('btnExportExcelResult'),
+  btnViewExcelOnMap: document.getElementById('btnViewExcelOnMap'),
+  // Floating Excel Widget
+  excelPointsWidget: document.getElementById('excelPointsWidget'),
+  excelWidgetTitle: document.getElementById('excelWidgetTitle'),
+  excelWidgetInCount: document.getElementById('excelWidgetInCount'),
+  excelWidgetOutCount: document.getElementById('excelWidgetOutCount'),
+  btnToggleExcelVisibility: document.getElementById('btnToggleExcelVisibility'),
+  excelEyeIcon: document.getElementById('excelEyeIcon'),
+  btnClearExcelPoints: document.getElementById('btnClearExcelPoints'),
+  btnReopenExcelModal: document.getElementById('btnReopenExcelModal')
 };
 
 /**
@@ -422,11 +463,22 @@ function isPointInsideFeature(pt, feature) {
     return inside;
   }
 
+  function testPolygonRings(rings) {
+    if (!rings || rings.length === 0) return false;
+    // Must be inside outer ring
+    if (!pointInPolygon(rings[0])) return false;
+    // Must NOT be inside any inner hole rings
+    for (let i = 1; i < rings.length; i++) {
+      if (pointInPolygon(rings[i])) return false;
+    }
+    return true;
+  }
+
   if (geom.type === 'Polygon') {
-    return pointInPolygon(geom.coordinates[0]);
+    return testPolygonRings(geom.coordinates);
   } else if (geom.type === 'MultiPolygon') {
     for (const poly of geom.coordinates) {
-      if (pointInPolygon(poly[0])) return true;
+      if (testPolygonRings(poly)) return true;
     }
   }
   return false;
@@ -937,6 +989,8 @@ function renderSuggestions(results) {
 
 function handleSelectSuggestion(item) {
   DOM.searchSuggestions.classList.add('hidden');
+  DOM.searchInput.value = item.title;
+  DOM.clearSearchBtn.classList.remove('hidden');
 
   if (item.type === 'sls') {
     const feature = item.value;
@@ -1007,18 +1061,8 @@ function processCoordinateInput() {
     const cleaned = quickVal.replace(/[^\d.,\s-]/g, '').trim();
     const parts = cleaned.split(/[\s,]+/).filter(Boolean);
     if (parts.length >= 2) {
-      let p0 = parseFloat(parts[0]);
-      let p1 = parseFloat(parts[1]);
-
-      // Smart detector: Indonesia lat is around -5 to -8, lng is 119 to 122
-      if (p0 > 90 && p1 < 0) {
-        // user entered [lng, lat]
-        lng = p0;
-        lat = p1;
-      } else {
-        lat = p0;
-        lng = p1;
-      }
+      lat = parseFloat(parts[0]);
+      lng = parseFloat(parts[1]);
     }
   } else if (latVal && lngVal) {
     lat = parseFloat(latVal);
@@ -1028,6 +1072,14 @@ function processCoordinateInput() {
   if (isNaN(lat) || isNaN(lng) || lat === null || lng === null) {
     showToast('Format koordinat tidak valid. Contoh: -6.49178, 120.48547', 'error');
     return;
+  }
+
+  // Smart detector: Indonesia/Selayar Latitude is around -5 to -8, Longitude is around 120 to 122
+  if (lat > 90 && lng < 0) {
+    const temp = lat;
+    lat = lng;
+    lng = temp;
+    showToast('Posisi Lintang & Bujur tertukar otomatis disesuaikan.', 'info');
   }
 
   // Close modal
@@ -1320,6 +1372,652 @@ function registerServiceWorker() {
 }
 
 /**
+ * Modal Backdrop Click & Keyboard (ESC) Dismissal
+ */
+function initModalBackdrops() {
+  document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('show-modal');
+        modal.classList.add('hidden-modal');
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.show-modal').forEach(modal => {
+        modal.classList.remove('show-modal');
+        modal.classList.add('hidden-modal');
+      });
+      if (DOM.searchSuggestions) {
+        DOM.searchSuggestions.classList.add('hidden');
+      }
+    }
+  });
+}
+
+/**
+ * 13. Excel Coordinate Batch Processing & Mapping
+ */
+function initExcelModal() {
+  // Modal Open/Close
+  DOM.btnOpenExcelModal.addEventListener('click', () => {
+    DOM.modalExcel.classList.remove('hidden-modal');
+    DOM.modalExcel.classList.add('show-modal');
+  });
+
+  DOM.btnCloseExcelModal.addEventListener('click', () => {
+    DOM.modalExcel.classList.remove('show-modal');
+    DOM.modalExcel.classList.add('hidden-modal');
+  });
+
+  // Drag and Drop & File Input
+  DOM.excelDropzone.addEventListener('click', () => {
+    DOM.excelFileInput.click();
+  });
+
+  DOM.excelFileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleExcelFile(e.target.files[0]);
+    }
+  });
+
+  DOM.excelDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    DOM.excelDropzone.classList.add('border-emerald-500', 'bg-slate-800');
+  });
+
+  DOM.excelDropzone.addEventListener('dragleave', () => {
+    DOM.excelDropzone.classList.remove('border-emerald-500', 'bg-slate-800');
+  });
+
+  DOM.excelDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    DOM.excelDropzone.classList.remove('border-emerald-500', 'bg-slate-800');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleExcelFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  // Template Download
+  DOM.btnDownloadExcelTemplate.addEventListener('click', downloadExcelTemplate);
+
+  // Process Button
+  DOM.btnProcessExcelData.addEventListener('click', processExcelCoordinates);
+
+  // View on Map & Export
+  DOM.btnViewExcelOnMap.addEventListener('click', () => {
+    DOM.modalExcel.classList.remove('show-modal');
+    DOM.modalExcel.classList.add('hidden-modal');
+    plotExcelPointsOnMap();
+  });
+
+  DOM.btnExportExcelResult.addEventListener('click', exportVerifiedExcel);
+
+  // Reset Button (Upload File Lain)
+  DOM.btnResetExcel.addEventListener('click', resetExcelUploadState);
+
+  // Floating Widget actions
+  DOM.btnToggleExcelVisibility.addEventListener('click', toggleExcelPointsVisibility);
+  DOM.btnClearExcelPoints.addEventListener('click', clearExcelPoints);
+  DOM.btnReopenExcelModal.addEventListener('click', () => {
+    DOM.modalExcel.classList.remove('hidden-modal');
+    DOM.modalExcel.classList.add('show-modal');
+  });
+
+  // Table filter tabs
+  document.querySelectorAll('.excel-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.excel-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderExcelResultsTable(btn.dataset.filter);
+    });
+  });
+}
+
+function resetExcelUploadState() {
+  DOM.excelFileInput.value = '';
+  DOM.excelUploadSection.classList.remove('hidden');
+  DOM.excelMappingSection.classList.add('hidden');
+  DOM.excelResultSection.classList.add('hidden');
+  DOM.btnResetExcel.classList.add('hidden');
+  DOM.btnExportExcelResult.disabled = true;
+  DOM.btnViewExcelOnMap.disabled = true;
+  state.excelRawData = [];
+  state.excelHeaders = [];
+  state.excelFileName = '';
+}
+
+function handleExcelFile(file) {
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+    showToast('Format file harus .xlsx, .xls, atau .csv', 'error');
+    return;
+  }
+
+  if (typeof XLSX === 'undefined') {
+    showToast('Pustaka SheetJS belum termuat. Periksa koneksi internet.', 'error');
+    return;
+  }
+
+  state.excelFileName = file.name;
+  DOM.excelFileMeta.textContent = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+      
+      if (!jsonRows || jsonRows.length === 0) {
+        showToast('File Excel kosong atau tidak memiliki baris data.', 'warning');
+        return;
+      }
+
+      state.excelRawData = jsonRows;
+      state.excelHeaders = Object.keys(jsonRows[0]);
+
+      populateExcelColumnSelectors();
+
+      DOM.excelUploadSection.classList.add('hidden');
+      DOM.excelMappingSection.classList.remove('hidden');
+      DOM.excelResultSection.classList.add('hidden');
+      DOM.btnResetExcel.classList.remove('hidden');
+
+      showToast(`File "${file.name}" berhasil dibaca (${jsonRows.length} baris)`, 'success');
+      lucide.createIcons();
+    } catch (err) {
+      console.error('Error reading Excel file:', err);
+      showToast(`Gagal membaca file Excel: ${err.message}`, 'error');
+    }
+  };
+
+  reader.onerror = () => {
+    showToast('Gagal membuka file.', 'error');
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function populateExcelColumnSelectors() {
+  const headers = state.excelHeaders;
+
+  DOM.selectLatCol.innerHTML = '';
+  DOM.selectLngCol.innerHTML = '';
+  DOM.selectLabelCol.innerHTML = '<option value="">-- (Opsional) Nomor Urut Saja --</option>';
+
+  headers.forEach(h => {
+    const opt1 = document.createElement('option');
+    opt1.value = h;
+    opt1.textContent = h;
+    DOM.selectLatCol.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = h;
+    opt2.textContent = h;
+    DOM.selectLngCol.appendChild(opt2);
+
+    const opt3 = document.createElement('option');
+    opt3.value = h;
+    opt3.textContent = h;
+    DOM.selectLabelCol.appendChild(opt3);
+  });
+
+  const latPatterns = ['lat', 'latitude', 'lintang', 'y', 'koordinatlat', 'coordlat'];
+  const lngPatterns = ['lon', 'long', 'lng', 'longitude', 'bujur', 'x', 'koordinatlng', 'coordlng'];
+  const labelPatterns = ['nama', 'name', 'label', 'responden', 'keterangan', 'ket', 'id', 'sls', 'no'];
+
+  function norm(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  const detectedLat = headers.find(h => latPatterns.includes(norm(h))) ||
+                      headers.find(h => latPatterns.some(p => norm(h).includes(p)));
+
+  const detectedLng = headers.find(h => lngPatterns.includes(norm(h))) ||
+                      headers.find(h => lngPatterns.some(p => norm(h).includes(p)));
+
+  const detectedLabel = headers.find(h => labelPatterns.includes(norm(h))) ||
+                        headers.find(h => labelPatterns.some(p => norm(h).includes(p)));
+
+  if (detectedLat) DOM.selectLatCol.value = detectedLat;
+  if (detectedLng) DOM.selectLngCol.value = detectedLng;
+  if (detectedLabel) DOM.selectLabelCol.value = detectedLabel;
+}
+
+function processExcelCoordinates() {
+  const latCol = DOM.selectLatCol.value;
+  const lngCol = DOM.selectLngCol.value;
+  const labelCol = DOM.selectLabelCol.value;
+
+  if (!latCol || !lngCol) {
+    showToast('Pilih kolom Latitude dan Longitude terlebih dahulu.', 'warning');
+    return;
+  }
+
+  const processed = [];
+  let inCount = 0;
+  let outCount = 0;
+  let invalidCount = 0;
+
+  state.excelRawData.forEach((row, index) => {
+    const rawLat = row[latCol];
+    const rawLng = row[lngCol];
+
+    let lat = parseFloat(String(rawLat).replace(',', '.').trim());
+    let lng = parseFloat(String(rawLng).replace(',', '.').trim());
+
+    const label = labelCol && row[labelCol] !== undefined && row[labelCol] !== ''
+      ? String(row[labelCol]).trim()
+      : `Titik #${index + 1}`;
+
+    // Auto-swap detector for Indonesia/Selayar (Lat is ~ -5 to -8, Lng is ~ 120 to 122)
+    if (lat > 90 && lng < 0) {
+      const temp = lat;
+      lat = lng;
+      lng = temp;
+    }
+
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      invalidCount++;
+      processed.push({
+        index,
+        label,
+        lat: isNaN(lat) ? null : lat,
+        lng: isNaN(lng) ? null : lng,
+        status: 'invalid',
+        sls: null,
+        feature: null
+      });
+      return;
+    }
+
+    // Spatial lookup against Selayar SLS polygons
+    const feature = findSlsByCoordinate(lat, lng);
+    if (feature) {
+      inCount++;
+      processed.push({
+        index,
+        label,
+        lat,
+        lng,
+        status: 'inside',
+        sls: feature.properties,
+        feature
+      });
+    } else {
+      outCount++;
+      processed.push({
+        index,
+        label,
+        lat,
+        lng,
+        status: 'outside',
+        sls: null,
+        feature: null
+      });
+    }
+  });
+
+  state.excelPoints = processed;
+
+  // Update Statistics UI
+  DOM.statTotalPoints.textContent = processed.length;
+  DOM.statInPoints.textContent = inCount;
+  DOM.statOutPoints.textContent = outCount;
+  DOM.tabCountAll.textContent = processed.length;
+  DOM.tabCountIn.textContent = inCount;
+  DOM.tabCountOut.textContent = outCount;
+
+  // Show results section
+  DOM.excelResultSection.classList.remove('hidden');
+  DOM.btnExportExcelResult.disabled = false;
+  DOM.btnViewExcelOnMap.disabled = (inCount + outCount === 0);
+
+  renderExcelResultsTable('all');
+  lucide.createIcons();
+
+  showToast(`Verifikasi selesai: ${inCount} titik di dalam SLS, ${outCount} titik di luar Selayar.`, 'success');
+}
+
+function renderExcelResultsTable(filter = 'all') {
+  let list = state.excelPoints;
+  if (filter === 'inside') {
+    list = list.filter(p => p.status === 'inside');
+  } else if (filter === 'outside') {
+    list = list.filter(p => p.status === 'outside');
+  }
+
+  if (list.length === 0) {
+    DOM.excelTableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="p-4 text-center text-slate-400 text-xs">
+          Tidak ada data untuk filter ini.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  DOM.excelTableBody.innerHTML = list.map(item => {
+    let statusBadge = '';
+    let slsDetail = '-';
+
+    if (item.status === 'inside' && item.sls) {
+      statusBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">Masuk SLS</span>';
+      slsDetail = `<b>[${item.sls.kdsls || '-'}] ${escapeHtml(item.sls.nmsls)}</b><br><span class="text-slate-400 text-[10px]">Desa ${escapeHtml(item.sls.nmdesa)}, Kec ${escapeHtml(item.sls.nmkec)}</span>`;
+    } else if (item.status === 'outside') {
+      statusBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-700">Luar Selayar</span>';
+      slsDetail = '<span class="text-rose-400 text-[10px]">Di luar batas poligon</span>';
+    } else {
+      statusBadge = '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Invalid</span>';
+      slsDetail = '<span class="text-slate-500 text-[10px]">Koordinat tidak valid</span>';
+    }
+
+    const coordStr = (item.lat !== null && item.lng !== null)
+      ? `${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}`
+      : 'Invalid';
+
+    return `
+      <tr class="hover:bg-slate-800/60 transition">
+        <td class="p-2 font-mono text-slate-400 text-[11px]">${item.index + 1}</td>
+        <td class="p-2 font-medium text-slate-100 max-w-[120px] truncate" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</td>
+        <td class="p-2 font-mono text-[11px] text-slate-300 whitespace-nowrap">${coordStr}</td>
+        <td class="p-2 leading-tight">${statusBadge}<div class="mt-0.5">${slsDetail}</div></td>
+        <td class="p-2 text-right">
+          ${item.lat !== null ? `
+            <button class="btn-focus-excel-point p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-white transition" data-idx="${item.index}" title="Lihat Titik di Peta">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+            </button>
+          ` : '-'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  lucide.createIcons();
+
+  DOM.excelTableBody.querySelectorAll('.btn-focus-excel-point').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      focusExcelPointOnMap(idx);
+    });
+  });
+}
+
+function focusExcelPointOnMap(index) {
+  const pt = state.excelPoints.find(p => p.index === index);
+  if (!pt || pt.lat === null || pt.lng === null) return;
+
+  DOM.modalExcel.classList.remove('show-modal');
+  DOM.modalExcel.classList.add('hidden-modal');
+
+  if (!state.excelPointsLayer) {
+    plotExcelPointsOnMap();
+  }
+
+  state.map.setView([pt.lat, pt.lng], 17, { animate: true });
+
+  if (pt.status === 'inside' && pt.feature) {
+    selectFeature(pt.feature, { lat: pt.lat, lng: pt.lng });
+  } else {
+    setClickMarker(pt.lat, pt.lng);
+  }
+}
+
+function plotExcelPointsOnMap() {
+  if (!state.map) return;
+
+  if (state.excelPointsLayer) {
+    state.map.removeLayer(state.excelPointsLayer);
+    state.excelPointsLayer = null;
+  }
+
+  const validPoints = state.excelPoints.filter(p => p.status !== 'invalid');
+  if (validPoints.length === 0) {
+    showToast('Tidak ada titik valid untuk diplot di peta.', 'warning');
+    return;
+  }
+
+  const layerGroup = L.layerGroup();
+  const latLngs = [];
+
+  validPoints.forEach((pt) => {
+    const isInside = pt.status === 'inside';
+    const color = isInside ? '#10b981' : '#f43f5e';
+    const fillColor = isInside ? '#34d399' : '#fb7185';
+
+    const marker = L.circleMarker([pt.lat, pt.lng], {
+      radius: 6.5,
+      fillColor: fillColor,
+      color: '#ffffff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.9,
+      pane: 'markerPane'
+    });
+
+    let popupHtml = `
+      <div class="text-xs text-slate-100">
+        <div class="flex items-center justify-between gap-2 border-b border-slate-700/80 pb-1.5 mb-1.5">
+          <span class="font-bold text-slate-200">#${pt.index + 1} ${escapeHtml(pt.label)}</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isInside ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-rose-950 text-rose-300 border border-rose-700'}">
+            ${isInside ? 'DI DALAM SLS' : 'DI LUAR SELAYAR'}
+          </span>
+        </div>
+        <div class="space-y-1 font-mono text-[11px] text-slate-300">
+          <div><span class="text-slate-400">Koordinat:</span> ${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}</div>
+    `;
+
+    if (isInside && pt.sls) {
+      const p = pt.sls;
+      popupHtml += `
+          <div class="mt-1 pt-1 border-t border-slate-800 font-sans">
+            <div class="font-bold text-sky-300">[${p.kdsls || '-'}] ${escapeHtml(p.nmsls || 'SLS')}</div>
+            <div class="text-slate-400 text-[10px]">Desa ${escapeHtml(p.nmdesa || '-')}, Kec ${escapeHtml(p.nmkec || '-')}</div>
+            <div class="text-slate-400 text-[10px]">ID SLS: ${p.idsls || '-'}</div>
+          </div>
+      `;
+    }
+
+    popupHtml += `
+        </div>
+        <div class="mt-2.5 pt-1.5 border-t border-slate-800 flex items-center gap-1.5">
+    `;
+
+    if (isInside && pt.feature) {
+      popupHtml += `
+          <button class="btn-highlight-sls-popup flex-1 py-1 px-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-[11px] text-center transition" data-idx="${pt.index}">
+            Sorot Poligon SLS
+          </button>
+      `;
+    }
+
+    popupHtml += `
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}" target="_blank" rel="noopener noreferrer" class="py-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-[11px] text-center transition">
+            Maps
+          </a>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, {
+      className: 'excel-point-popup',
+      maxWidth: 290
+    });
+
+    marker.on('popupopen', () => {
+      const btn = document.querySelector(`.btn-highlight-sls-popup[data-idx="${pt.index}"]`);
+      if (btn && pt.feature) {
+        btn.addEventListener('click', () => {
+          selectFeature(pt.feature, { lat: pt.lat, lng: pt.lng });
+          marker.closePopup();
+        });
+      }
+    });
+
+    layerGroup.addLayer(marker);
+    latLngs.push([pt.lat, pt.lng]);
+  });
+
+  state.excelPointsLayer = layerGroup.addTo(state.map);
+  state.isExcelLayerVisible = true;
+
+  if (latLngs.length > 0) {
+    const bounds = L.latLngBounds(latLngs);
+    state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16, animate: true });
+  }
+
+  updateExcelFloatingWidget();
+  showToast(`Menampilkan ${validPoints.length} titik koordinat dari Excel di peta.`, 'info');
+}
+
+function updateExcelFloatingWidget() {
+  if (!state.excelPoints || state.excelPoints.length === 0) {
+    DOM.excelPointsWidget.classList.add('hidden');
+    return;
+  }
+
+  const inCount = state.excelPoints.filter(p => p.status === 'inside').length;
+  const outCount = state.excelPoints.filter(p => p.status === 'outside').length;
+  const total = inCount + outCount;
+
+  DOM.excelWidgetTitle.textContent = `${total} Titik Excel`;
+  DOM.excelWidgetInCount.textContent = inCount;
+  DOM.excelWidgetOutCount.textContent = outCount;
+
+  DOM.excelPointsWidget.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function toggleExcelPointsVisibility() {
+  if (!state.excelPointsLayer) return;
+
+  if (state.isExcelLayerVisible) {
+    state.map.removeLayer(state.excelPointsLayer);
+    state.isExcelLayerVisible = false;
+    DOM.excelEyeIcon.setAttribute('data-lucide', 'eye-off');
+    showToast('Layer titik Excel disembunyikan.', 'info');
+  } else {
+    state.excelPointsLayer.addTo(state.map);
+    state.isExcelLayerVisible = true;
+    DOM.excelEyeIcon.setAttribute('data-lucide', 'eye');
+    showToast('Layer titik Excel ditampilkan.', 'info');
+  }
+  lucide.createIcons();
+}
+
+function clearExcelPoints() {
+  if (state.excelPointsLayer) {
+    state.map.removeLayer(state.excelPointsLayer);
+    state.excelPointsLayer = null;
+  }
+  state.excelPoints = [];
+  DOM.excelPointsWidget.classList.add('hidden');
+  resetExcelUploadState();
+  showToast('Titik koordinat Excel telah dihapus dari peta.', 'info');
+}
+
+function exportVerifiedExcel() {
+  if (!state.excelPoints || state.excelPoints.length === 0) {
+    showToast('Tidak ada data untuk diekspor.', 'warning');
+    return;
+  }
+
+  const exportRows = state.excelPoints.map(pt => {
+    const originalRow = { ...(state.excelRawData[pt.index] || {}) };
+    const p = pt.sls || {};
+
+    const verified = {
+      'STATUS_VERIFIKASI': pt.status === 'inside' ? 'DI DALAM SLS' : (pt.status === 'outside' ? 'DI LUAR SLS SELAYAR' : 'KOORDINAT INVALID'),
+      'LAT_VERIFIKASI': pt.lat !== null ? pt.lat : '',
+      'LNG_VERIFIKASI': pt.lng !== null ? pt.lng : '',
+      'ID_SLS_TERDETEKSI': p.idsls || '',
+      'KODE_SLS': p.kdsls || '',
+      'NAMA_SLS_TERDETEKSI': p.nmsls || '',
+      'KODE_DESA': p.kddesa || '',
+      'DESA_TERDETEKSI': p.nmdesa || '',
+      'KODE_KEC': p.kdkec || '',
+      'KECAMATAN_TERDETEKSI': p.nmkec || '',
+      'KABUPATEN': p.nmkab || ''
+    };
+
+    return { ...originalRow, ...verified };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportRows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Hasil_Verifikasi_SLS');
+
+  const base = (state.excelFileName || 'Koordinat_Selayar').replace(/\.[^/.]+$/, '');
+  const outName = `Hasil_Verifikasi_SLS_${base}.xlsx`;
+
+  XLSX.writeFile(wb, outName);
+  showToast(`File "${outName}" berhasil diunduh!`, 'success');
+}
+
+function downloadExcelTemplate() {
+  const sampleData = [
+    {
+      No: 1,
+      ID_Responden: 'R-7301-001',
+      Nama_Kepala_Keluarga: 'Ahmad Yani',
+      Latitude: -6.1215,
+      Longitude: 120.4623,
+      Keterangan: 'Contoh responden di Kota Benteng'
+    },
+    {
+      No: 2,
+      ID_Responden: 'R-7301-002',
+      Nama_Kepala_Keluarga: 'H. Daeng Maruntung',
+      Latitude: -6.4907,
+      Longitude: 120.4828,
+      Keterangan: 'Contoh responden di Dusun Bunging, Appatanah'
+    },
+    {
+      No: 3,
+      ID_Responden: 'R-7301-003',
+      Nama_Kepala_Keluarga: 'Siti Rahmawati',
+      Latitude: -6.7025,
+      Longitude: 121.1520,
+      Keterangan: 'Contoh responden di Kepulauan Takabonerate'
+    },
+    {
+      No: 4,
+      ID_Responden: 'R-7301-004',
+      Nama_Kepala_Keluarga: 'Baharuddin (Outlier)',
+      Latitude: -5.1476,
+      Longitude: 119.4327,
+      Keterangan: 'Contoh titik di luar Selayar (Makassar) untuk uji deteksi outlier'
+    }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  XLSX.utils.book_append_sheet(wb, ws, 'Template_Koordinat');
+  XLSX.writeFile(wb, 'Template_Upload_Koordinat_Selayar.xlsx');
+  showToast('Template Excel berhasil diunduh!', 'success');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Main Application Bootstrap
  */
 function initApp() {
@@ -1329,6 +2027,8 @@ function initApp() {
   initCoordinateModal();
   initFilterModal();
   initBasemapModal();
+  initExcelModal();
+  initModalBackdrops();
   initClipboardActions();
 
   // Controls event listeners
